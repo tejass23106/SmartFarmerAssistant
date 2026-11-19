@@ -1,0 +1,10 @@
+{% set flash_icons = {'success': 'check-circle-fill', 'danger': 'exclamation-octagon-fill', 'warning': 'exclamation-triangle-fill', 'info': 'info-circle-fill'} %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% for category, message in messages %}
+    <div class="alert alert-{{ category }} alert-dismissible fade show d-flex align-items-start gap-2" role="alert">
+      <i class="bi bi-{{ flash_icons.get(category, 'info-circle-fill') }} mt-1"></i>
+      <div>{{ t(message) }}</div>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  {% endfor %}
+{% endwith %}

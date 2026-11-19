@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import empty_state with context %}
+{% block title %}{{ t('nav.chat') }} - Smart Farmer{% endblock %}
+{% block content %}
+<div class="page-head"><div><h3><i class="bi bi-chat-dots text-forest"></i> {{ t('nav.chat') }}</h3><p class="sub">{{ t('chat.sub') }}</p></div>
+  <a href="{{ url_for('chat_page') }}" class="btn btn-outline-success btn-sm"><i class="bi bi-plus-circle"></i> {{ t('chat.new') }}</a></div>
+{% if not configured %}<div class="alert alert-warning"><i class="bi bi-plug"></i> {{ t('chat.not_configured') }} <code>ANTHROPIC_API_KEY</code> <span class="small">({{ t('chat.setup_hint') }})</span></div>{% endif %}
+<div class="row g-3">
+  <div class="col-lg-3 order-lg-1 order-2"><div class="card stat-card"><div class="card-body text-start"><h6 class="panel-title"><i class="bi bi-clock-history text-success"></i> {{ t('chat.history') }}</h6>
+    {% if convs %}<ul class="mini-list">{% for cv in convs %}<li class="d-flex justify-content-between align-items-center gap-1 {{ 'fw-semibold' if current and current.id == cv.id }}">
+      <a href="{{ url_for('chat_page', c=cv.id) }}" class="text-truncate">{{ cv.title }}</a>
+      <form method="post" action="{{ url_for('chat_delete', conv_id=cv.id) }}" onsubmit="return confirm('{{ t('common.confirm_delete') }}');"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><button class="btn btn-sm btn-link text-danger p-0" aria-label="{{ t('common.delete') }}"><i class="bi bi-trash"></i></button></form></li>{% endfor %}</ul>
+    {% else %}<p class="small text-muted mb-0">{{ t('chat.no_history') }}</p>{% endif %}</div></div></div>
+  <div class="col-lg-9 order-lg-2 order-1"><div class="card stat-card"><div class="card-body text-start">
+    <div id="chatApp" data-api="{{ url_for('chat_send') }}" data-page="{{ url_for('chat_page') }}" data-conv="{{ current.id if current else '' }}"
+         data-thinking="{{ t('chat.thinking') }}" data-network="{{ t('chat.err_network') }}">
+      <div class="d-flex flex-wrap gap-2 align-items-center mb-2"><label class="small text-muted mb-0" for="chatLang">{{ t('chat.answer_in') }}</label>
+        <select id="chatLang" class="form-select form-select-sm w-auto">{% for code, name in LANGS.items() %}<option value="{{ code }}" {{ 'selected' if code == lang }}>{{ name }}</option>{% endfor %}</select>
+        <div class="form-check form-switch ms-auto mb-0 d-none" id="ttsWrap"><input class="form-check-input" type="checkbox" id="ttsToggle"><label class="form-check-label small" for="ttsToggle"><i class="bi bi-volume-up"></i> {{ t('voice.read_aloud') }}</label></div></div>
+      <div class="chat-box" id="chatBox" aria-live="polite">
+        {% for m in messages %}<div class="bubble {{ 'user' if m.role == 'user' else 'bot' }}">{{ m.content }}</div>{% endfor %}
+        {% if not messages %}<div id="chatEmpty" class="empty-state"><i class="bi bi-chat-heart"></i><h6>{{ t('chat.empty_title') }}</h6><p>{{ t('chat.empty_d') }}</p>
+          <div class="d-flex flex-wrap gap-2 justify-content-center">{% for i in range(1, 5) %}<button type="button" class="btn btn-sm btn-outline-success" data-suggest="{{ t('chat.s' ~ i) }}">{{ t('chat.s' ~ i) }}</button>{% endfor %}</div></div>{% endif %}
+      </div>
+      <div id="voiceHeard" class="small text-muted mt-2 d-none"></div>
+      <div id="voiceMsg" class="alert alert-warning py-2 small mt-2 d-none"></div>
+      <form id="chatForm" class="mt-2" autocomplete="off"><div class="input-group">
+        <button type="button" class="btn btn-outline-success mic-btn d-none" id="micBtn" aria-label="{{ t('voice.speak') }}" title="{{ t('voice.speak') }}"><i class="bi bi-mic-fill"></i></button>
+        <textarea id="chatInput" class="form-control" rows="1" maxlength="800" placeholder="{{ t('chat.placeholder') }}" required></textarea>
+        <button class="btn btn-success" id="chatSend"><i class="bi bi-send"></i> {{ t('chat.send') }}</button></div></form>
+      <div class="form-text">{{ t('chat.disclaimer') }}</div>
+    </div></div></div></div>
+</div>
+<div id="voiceStrings" class="d-none" data-unsupported="{{ t('voice.unsupported') }}" data-denied="{{ t('voice.denied') }}" data-listening="{{ t('voice.listening') }}"
+     data-heard="{{ t('voice.heard') }}" data-nospeech="{{ t('voice.no_speech') }}" data-notts="{{ t('voice.no_tts') }}" data-novoice="{{ t('voice.no_voice_lang') }}"></div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+<script src="{{ url_for('static', filename='js/voice.js') }}"></script>
+{% endblock %}

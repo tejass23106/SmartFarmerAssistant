@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import empty_state with context %}
+{% block title %}{{ t('nav.notifications') }} - Smart Farmer{% endblock %}
+{% block content %}
+<div class="page-head"><div><h3><i class="bi bi-bell text-forest"></i> {{ t('nav.notifications') }}</h3></div>
+  {% if rows %}<form method="post" action="{{ url_for('notifications_read_all') }}"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><button class="btn btn-outline-success btn-sm">{{ t('notif.mark_all') }}</button></form>{% endif %}</div>
+{% if rows %}{% for n in rows %}
+<div class="panel notif-item {{ 'unread' if not n.is_read }} p-3 mb-2"><div class="d-flex justify-content-between"><strong>{{ n.title }}</strong><span class="small text-muted">{{ n.created_at[:16] }}</span></div>
+  {% if n.body %}<div class="small text-muted">{{ n.body }}</div>{% endif %}{% if n.link %}<a class="small" href="{{ n.link }}">{{ t('common.view') }} &rarr;</a>{% endif %}</div>
+{% endfor %}{% else %}<div class="card stat-card"><div class="card-body">{{ empty_state('bell', t('notif.none'), t('notif.none_d')) }}</div></div>{% endif %}
+{% endblock %}

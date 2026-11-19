@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}{{ t('rep.report_title') }} - Smart Farmer{% endblock %}
+{% block content %}
+<div class="page-head"><div><h3><i class="bi bi-flag text-warning"></i> {{ t('rep.report_title') }}</h3><p class="sub">{{ t('rep.sub') }}</p></div>
+  <a href="{{ url_for('reports') }}" class="btn btn-outline-success btn-sm"><i class="bi bi-list-ul"></i> {{ t('rep.my_reports') }}</a></div>
+<div class="row g-3">
+  <div class="col-lg-7"><div class="card stat-card"><div class="card-body text-start">
+    <form method="post" enctype="multipart/form-data" novalidate>
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">{% if pred %}<input type="hidden" name="prediction_id" value="{{ pred.id }}">{% endif %}
+      <div class="row">
+        <div class="col-md-6 mb-3"><label class="form-label">{{ t('dis.crop') }} *</label>
+          <select name="crop_name" class="form-select" required>
+            {% set cur = form.get('crop_name', '') %}<option value="">-</option>
+            {% for c in crops %}<option value="{{ c.name }}" {{ 'selected' if cur == c.name }}>{{ tn('crop', c.name) }}</option>{% endfor %}
+            {% if cur and cur not in crops|map(attribute='name')|list %}<option value="{{ cur }}" selected>{{ cur }}</option>{% endif %}</select></div>
+        <div class="col-md-6 mb-3"><label class="form-label">{{ t('rep.disease_name') }} *</label>
+          <input name="disease_name" list="diseaseList" class="form-control" maxlength="80" value="{{ form.get('disease_name', '') }}" required>
+          <datalist id="diseaseList">{% for d in diseases %}<option value="{{ d.name }}">{% endfor %}</datalist></div></div>
+      <div class="row">
+        <div class="col-md-7 mb-3"><label class="form-label">{{ t('farm.location') }} *</label><input name="location" class="form-control" maxlength="120" value="{{ form.get('location', '') }}" required></div>
+        <div class="col-md-5 mb-3"><label class="form-label">{{ t('common.date') }} *</label><input type="date" name="report_date" class="form-control" max="{{ today }}" value="{{ form.get('report_date', today) }}" required></div></div>
+      <div class="mb-3"><label class="form-label">{{ t('rep.description') }}</label><textarea name="description" rows="4" maxlength="1000" class="form-control" placeholder="{{ t('rep.description_ph') }}">{{ form.get('description', '') }}</textarea></div>
+      {% if not pred %}<div class="mb-3"><label class="form-label">{{ t('rep.image') }} *</label>
+        <input type="file" name="image" id="reportImage" class="form-control" accept=".jpg,.jpeg,.png,image/jpeg,image/png" required>
+        <img id="reportPreview" class="img-fluid rounded mt-2 d-none" style="max-height:200px" alt="Preview"><div class="form-text">{{ t('dis.limits') }}</div></div>{% endif %}
+      <button class="btn btn-warning"><i class="bi bi-send"></i> {{ t('rep.submit') }}</button> <a href="{{ url_for('reports') }}" class="btn btn-outline-secondary">{{ t('common.cancel') }}</a>
+    </form></div></div></div>
+  <div class="col-lg-5">
+    {% if pred %}<div class="card stat-card"><div class="card-body text-start"><h6>{{ t('rep.detected_image') }}</h6>
+      <img src="{{ url_for('static', filename='uploads/' ~ pred.image_path) }}" class="img-fluid rounded mb-2" alt="Leaf">
+      <p class="mb-0"><strong>{{ t('dis.confidence') }}:</strong> {{ '%.1f'|format(pred.confidence) }}%</p><small class="text-muted">{{ t('rep.auto_attached') }}</small></div></div>
+    {% else %}<div class="card stat-card"><div class="card-body text-start text-muted"><i class="bi bi-info-circle"></i> {{ t('rep.manual_note') }} <a href="{{ safe_url('disease_detection') }}">{{ t('nav.disease') }}</a>.</div></div>{% endif %}
+  </div></div>
+{% endblock %}
+{% block scripts %}
+<script>var inp=document.getElementById('reportImage');if(inp){inp.addEventListener('change',function(){var f=inp.files[0],img=document.getElementById('reportPreview');if(!f)return;
+ if(['image/jpeg','image/png'].indexOf(f.type)===-1||f.size>5*1024*1024){alert('{{ t("dis.err_type") }}');inp.value='';img.classList.add('d-none');return;}
+ img.src=URL.createObjectURL(f);img.classList.remove('d-none');});}</script>
+{% endblock %}

@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import empty_state, status_badge, irr_badge with context %}
+{% block title %}{{ t('nav.dashboard') }} - Smart Farmer{% endblock %}
+{% block content %}
+
+<section class="hero-banner mb-4"><div class="row align-items-center g-3">
+  <div class="col-lg-7">
+    <h3 class="mb-1">{{ t('dash.welcome') }}, {{ session.name.split(' ')[0] }} 👋</h3><p class="mb-3 opacity-90">{{ t('dash.overview') }}</p>
+    <a href="{{ safe_url('crop_recommendation') }}" class="btn btn-sun btn-sm me-1 mb-1"><i class="bi bi-tree"></i> {{ t('nav.crop_advisory') }}</a>
+    <a href="{{ safe_url('disease_detection') }}" class="btn btn-outline-light btn-sm me-1 mb-1"><i class="bi bi-camera"></i> {{ t('nav.disease') }}</a>
+    <a href="{{ safe_url('chat_page') }}" class="btn btn-outline-light btn-sm mb-1"><i class="bi bi-chat-dots"></i> {{ t('dash.ask_ai') }}</a></div>
+  <div class="col-lg-5"><div class="weather-mini">
+    {% if wx and wx.forecast %}{% set c = wx.forecast.current %}
+      <div class="d-flex justify-content-between align-items-center"><div><div class="small opacity-90"><i class="bi bi-geo-alt"></i> {{ wx.place }}</div>
+        <div class="temp">{{ c.temp|round|int }}&deg;C</div><div class="small">{{ c.description }} &middot; {{ t('wx.humidity') }} {{ c.humidity }}%</div></div>
+        <i class="bi bi-{{ c.icon }}" style="font-size:2.6rem"></i></div>
+      {% set tip = wx.forecast.tips[0] %}<div class="small mt-2 opacity-90"><i class="bi bi-lightbulb"></i> {{ t(tip[0], **tip[1]) }}</div>
+      <a class="small" href="{{ safe_url('weather_page') }}">{{ t('dash.full_forecast') }} &rarr;</a>
+    {% elif wx and wx.needs_location %}<div class="small"><i class="bi bi-geo-alt"></i> {{ t('dash.wx_location') }}</div><a class="small" href="{{ safe_url('weather_page') }}">{{ t('dash.choose_location') }} &rarr;</a>
+    {% else %}<div class="small"><i class="bi bi-cloud-slash"></i> {{ wx.error if wx and wx.error else t('dash.wx_unavailable') }}</div><a class="small" href="{{ safe_url('weather_page') }}">{{ t('nav.weather') }} &rarr;</a>{% endif %}
+  </div></div></div></section>
+
+{% if stats.farms == 0 and stats.predictions == 0 and stats.recommendations == 0 %}
+<div class="card stat-card mb-4"><div class="card-body text-start"><h6 class="mb-3">{{ t('dash.getting_started') }}</h6><div class="row g-3">
+  {% for n, ep, key in [(1,'farms','dash.gs1'), (2,'crop_recommendation','dash.gs2'), (3,'disease_detection','dash.gs3')] %}
+  <div class="col-md-4 d-flex gap-2"><span class="step-num">{{ n }}</span><div><a href="{{ safe_url(ep) }}" class="fw-semibold">{{ t(key) }}</a><div class="small text-muted">{{ t(key ~ '_d') }}</div></div></div>{% endfor %}
+</div></div></div>
+{% endif %}
+
+<div class="row g-3 mb-3">
+  {% for label, value, icon, ep in [('dash.farms', stats.farms, 'geo-alt', 'farms'), ('dash.recs', stats.recommendations, 'tree', 'history'), ('dash.diagnoses', stats.predictions, 'cpu', 'history'), ('dash.reports', stats.reports, 'clipboard2-pulse', 'history')] %}
+  <div class="col-6 col-lg-3"><a href="{{ safe_url(ep) }}" class="stat-link"><div class="card stat-card h-100"><div class="card-body"><i class="bi bi-{{ icon }}"></i><h2>{{ value }}</h2><div class="text-muted">{{ t(label) }}</div></div></div></a></div>
+  {% endfor %}
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-lg-4"><div class="card stat-card h-100"><div class="card-body text-start">
+    <h6 class="panel-title"><i class="bi bi-tree text-success"></i> {{ t('dash.latest_rec') }}</h6>
+    {% if latest_rec %}<div class="d-flex gap-3 align-items-center"><img src="{{ crop_img(latest_rec.top_crop) }}" alt="" width="84" height="60" class="rounded-3" style="object-fit:cover">
+      <div><div class="fs-5 fw-semibold">{{ tn('crop', latest_rec.top_crop) }}</div><div class="small text-muted">{{ latest_rec.top_score }}% &middot; {{ latest_rec.created_at[:10] }}</div></div></div>
+      <a class="btn btn-sm btn-outline-success mt-3 align-self-start" href="{{ url_for('recommendation_detail', rec_id=latest_rec.id) }}">{{ t('common.view') }}</a>
+    {% else %}{{ empty_state('tree', t('dash.no_recs'), t('dash.no_recs_d'), safe_url('crop_recommendation'), t('nav.crop_advisory')) }}{% endif %}</div></div></div>
+  <div class="col-lg-4"><div class="card stat-card h-100"><div class="card-body text-start">
+    <h6 class="panel-title"><i class="bi bi-camera text-success"></i> {{ t('dash.recent_det') }}</h6>
+    {% if recent_preds %}<ul class="mini-list">{% for p in recent_preds %}<li class="d-flex justify-content-between"><a href="{{ url_for('disease_result', prediction_id=p.id) }}">{{ tn('crop', p.crop_name) }} - {{ p.disease_name }}</a><span class="text-muted">{{ '%.0f'|format(p.confidence) }}%</span></li>{% endfor %}</ul>
+    {% else %}{{ empty_state('camera', t('dash.no_det'), t('dash.no_det_d'), safe_url('disease_detection'), t('nav.disease')) }}{% endif %}</div></div></div>
+  <div class="col-lg-4"><div class="card stat-card h-100"><div class="card-body text-start">
+    <h6 class="panel-title"><i class="bi bi-moisture text-success"></i> {{ t('dash.soil_health') }}</h6>
+    {% if soil %}{% set r = soil.summary.get('ratings', {}) %}
+      <div class="row text-center g-2 mb-2">{% for k in ['N','P','K'] %}<div class="col-4"><div class="small text-muted">{{ k }}</div><span class="badge text-bg-{{ {'low':'danger','medium':'warning','high':'success'}.get(r.get(k), 'secondary') }}">{{ t('fert.level.' ~ r.get(k, 'unknown')) }}</span></div>{% endfor %}</div>
+      <div class="small">pH {{ soil.ph }} &middot; {{ t('fert.ph.' ~ soil.summary.get('ph_class', 'unknown')) }}</div>
+      {% if soil.summary.get('deficient') %}<div class="small mt-1"><i class="bi bi-basket text-success"></i> {{ t('dash.fert_for') }} <strong>{{ soil.summary.deficient|join(', ') }}</strong></div>{% endif %}
+      <a class="btn btn-sm btn-outline-success mt-3 align-self-start" href="{{ safe_url('fertilizer_page') }}">{{ t('nav.fertilizer') }}</a>
+    {% else %}{{ empty_state('moisture', t('dash.no_soil'), t('dash.no_soil_d'), safe_url('fertilizer_page'), t('nav.fertilizer')) }}{% endif %}</div></div></div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-lg-4"><div class="card stat-card h-100"><div class="card-body text-start">
+    <h6 class="panel-title"><i class="bi bi-droplet text-success"></i> {{ t('dash.irrigation') }}</h6>
+    {% if irrigation %}<div class="mb-1">{{ irr_badge(irrigation.status) }}</div><div class="small">{{ tn('crop', irrigation.crop) }} &middot; {{ irrigation.soil_moisture }}% &middot; {{ irrigation.created_at[:10] }}</div>
+      <a class="btn btn-sm btn-outline-success mt-3 align-self-start" href="{{ safe_url('irrigation_page') }}">{{ t('nav.irrigation') }}</a>
+    {% else %}{{ empty_state('droplet', t('dash.no_irr'), t('dash.no_irr_d'), safe_url('irrigation_page'), t('nav.irrigation')) }}{% endif %}</div></div></div>
+  <div class="col-lg-4"><div class="card stat-card h-100"><div class="card-body text-start">
+    <h6 class="panel-title"><i class="bi bi-graph-up-arrow text-success"></i> {{ t('dash.market') }}{% if market_crop %} <span class="badge text-bg-light">{{ tn('crop', market_crop) }}</span>{% endif %}</h6>
+    {% if market %}<ul class="mini-list">{% for m in market %}<li class="d-flex justify-content-between"><span>{{ m.market }}</span><strong>&#8377;{{ '%g'|format(m.modal_price) }}</strong></li>{% endfor %}</ul>
+      <div class="small text-muted">{{ t('mkt.source') }}: data.gov.in &middot; {{ market[0].arrival_date }}</div>
+    {% else %}{{ empty_state('graph-up-arrow', t('dash.no_market'), t('dash.no_market_d'), safe_url('market_page'), t('nav.market')) }}{% endif %}</div></div></div>
+  <div class="col-lg-4"><div class="card stat-card h-100"><div class="card-body text-start">
+    <h6 class="panel-title"><i class="bi bi-calendar3 text-success"></i> {{ t('dash.calendar') }}{% if overdue %} <span class="badge status-required">{{ overdue }} {{ t('cal.overdue') }}</span>{% endif %}</h6>
+    {% if calendar %}<ul class="mini-list">{% for a in calendar %}<li><span class="text-muted">{{ a.start_date[5:] }}</span> {{ a.title }}</li>{% endfor %}</ul>
+      <a class="small" href="{{ safe_url('calendar_page') }}">{{ t('common.view_all') }}</a>
+    {% else %}{{ empty_state('calendar3', t('dash.no_cal'), t('dash.no_cal_d'), safe_url('calendar_page'), t('nav.calendar')) }}{% endif %}</div></div></div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-lg-4"><div class="card stat-card h-100"><div class="card-body text-start">
+    <h6 class="panel-title"><i class="bi bi-pie-chart text-success"></i> {{ t('dash.report_status') }}</h6>
+    {% if status_data|sum %}<div class="chart-box"><canvas id="statusChart"></canvas></div>{% else %}{{ empty_state('clipboard2-pulse', t('dash.no_reports'), t('dash.no_reports_d'), safe_url('report_new'), t('nav.report')) }}{% endif %}</div></div></div>
+  <div class="col-lg-4"><div class="card stat-card h-100"><div class="card-body text-start">
+    <h6 class="panel-title"><i class="bi bi-bar-chart text-success"></i> {{ t('dash.your_diagnoses') }}</h6>
+    {% if d_values %}<div class="chart-box"><canvas id="diseaseChart"></canvas></div>{% else %}{{ empty_state('camera', t('dash.no_det'), t('dash.no_det_d')) }}{% endif %}</div></div></div>
+  <div class="col-lg-4"><div class="card stat-card h-100"><div class="card-body text-start">
+    <h6 class="panel-title"><i class="bi bi-tree text-success"></i> {{ t('dash.top_crops') }}</h6>
+    {% if r_values %}<div class="chart-box"><canvas id="recChart"></canvas></div>{% else %}{{ empty_state('tree', t('dash.no_recs'), t('dash.no_recs_d')) }}{% endif %}</div></div></div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-4"><div class="card stat-card h-100"><div class="card-body text-start">
+    <div class="d-flex justify-content-between"><h6 class="panel-title"><i class="bi bi-bell text-success"></i> {{ t('nav.notifications') }}</h6><a class="small" href="{{ safe_url('notifications') }}">{{ t('common.view_all') }}</a></div>
+    {% if notifications %}<ul class="mini-list">{% for n in notifications %}<li><strong>{{ n.title }}</strong>{% if n.body %}<div class="small text-muted">{{ n.body }}</div>{% endif %}</li>{% endfor %}</ul>
+    {% else %}{{ empty_state('bell', t('notif.none'), t('notif.none_d')) }}{% endif %}</div></div></div>
+  <div class="col-lg-4"><div class="card stat-card h-100"><div class="card-body text-start">
+    <h6 class="panel-title"><i class="bi bi-activity text-success"></i> {{ t('dash.activity') }}</h6>
+    {% if activity %}<ul class="mini-list">{% for a in activity %}<li class="d-flex justify-content-between"><span>{{ t('act.' ~ a.action) }}{% if a.detail %} <span class="text-muted">{{ a.detail }}</span>{% endif %}</span><span class="small text-muted">{{ a.created_at[5:16] }}</span></li>{% endfor %}</ul>
+    {% else %}{{ empty_state('activity', t('dash.no_activity'), '') }}{% endif %}</div></div></div>
+  <div class="col-lg-4"><div class="card stat-card h-100"><div class="card-body text-start">
+    <div class="d-flex justify-content-between"><h6 class="panel-title"><i class="bi bi-clipboard2-pulse text-success"></i> {{ t('dash.recent_reports') }}{% if stats.pending %} <span class="badge status-pending">{{ stats.pending }}</span>{% endif %}</h6><a class="small" href="{{ safe_url('reports') }}">{{ t('common.view_all') }}</a></div>
+    {% if recent_reports %}<ul class="mini-list">{% for r in recent_reports %}<li class="d-flex justify-content-between"><span>{{ tn('crop', r.crop_name) }} - {{ r.disease_name }}</span>{{ status_badge(r.status) }}</li>{% endfor %}</ul>
+    {% else %}{{ empty_state('flag', t('dash.no_reports'), t('dash.no_reports_d')) }}{% endif %}</div></div></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+  var green = ['#1b6b3e', '#3f9d4e', '#7cc47f', '#f2b53c', '#a7d3a9', '#0e3b26'];
+  {% if status_data|sum %}new Chart(document.getElementById('statusChart'), {type: 'doughnut', data: {labels: ['{{ t("status.Pending") }}', '{{ t("status.Reviewed") }}', '{{ t("status.Resolved") }}'], datasets: [{data: {{ status_data|tojson }}, backgroundColor: ['#f2b53c', '#4aa3df', '#2e8b45']}]}, options: {maintainAspectRatio: false, plugins: {legend: {position: 'bottom'}}}});{% endif %}
+  {% if d_values %}new Chart(document.getElementById('diseaseChart'), {type: 'bar', data: {labels: {{ d_labels|tojson }}, datasets: [{data: {{ d_values|tojson }}, backgroundColor: '#3f9d4e', borderRadius: 6}]}, options: {maintainAspectRatio: false, plugins: {legend: {display: false}}, scales: {y: {beginAtZero: true, ticks: {precision: 0}}}}});{% endif %}
+  {% if r_values %}new Chart(document.getElementById('recChart'), {type: 'bar', data: {labels: {{ r_labels|tojson }}, datasets: [{data: {{ r_values|tojson }}, backgroundColor: green, borderRadius: 6}]}, options: {maintainAspectRatio: false, plugins: {legend: {display: false}}, scales: {y: {beginAtZero: true, ticks: {precision: 0}}}}});{% endif %}
+</script>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import empty_state with context %}
+{% block title %}{{ t('nav.farms') }} - Smart Farmer{% endblock %}
+{% block content %}
+<div class="page-head"><div><h3><i class="bi bi-geo-alt text-forest"></i> {{ t('nav.farms') }}</h3><p class="sub">{{ t('farm.sub') }}</p></div></div>
+<div class="row g-3">
+  <div class="col-lg-5"><div class="card stat-card"><div class="card-body text-start">
+    <h6 class="panel-title">{{ t('farm.edit') if form.get('id') else t('farm.add') }}</h6>
+    <form method="post" action="{{ url_for('farm_save') }}" novalidate>
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}"><input type="hidden" name="id" value="{{ form.get('id', '') }}">
+      <div class="mb-3"><label class="form-label">{{ t('farm.name') }} *</label><input name="name" class="form-control" maxlength="80" value="{{ form.get('name', '') }}" required></div>
+      <div class="mb-3"><label class="form-label">{{ t('farm.location') }} *</label><input name="location" class="form-control" maxlength="120" value="{{ form.get('location', '') }}" placeholder="{{ t('farm.location_ph') }}" required></div>
+      <div class="row"><div class="col-6 mb-3"><label class="form-label">{{ t('farm.area') }}</label><input name="area_acres" type="number" step="any" min="0" class="form-control" value="{{ form.get('area_acres') if form.get('area_acres') is not none else '' }}"></div>
+        <div class="col-6 mb-3"><label class="form-label">{{ t('farm.main_crop') }}</label><input name="main_crop" class="form-control" maxlength="60" value="{{ form.get('main_crop') or '' }}"></div></div>
+      <div class="row"><div class="col-6 mb-3"><label class="form-label">{{ t('farm.soil') }}</label><select name="soil_type" class="form-select"><option value="">{{ t('common.not_sure') }}</option>
+          {% for s in soils %}<option value="{{ s }}" {{ 'selected' if form.get('soil_type') == s }}>{{ tn('soil', s) }}</option>{% endfor %}</select></div>
+        <div class="col-6 mb-3"><label class="form-label">{{ t('farm.water') }}</label><select name="water_source" class="form-select"><option value="">{{ t('common.not_sure') }}</option>
+          {% for w in water_sources %}<option value="{{ w }}" {{ 'selected' if form.get('water_source') == w }}>{{ tn('wsrc', w) }}</option>{% endfor %}</select></div></div>
+      <div class="mb-3"><label class="form-label">{{ t('farm.notes') }}</label><textarea name="notes" rows="2" maxlength="500" class="form-control">{{ form.get('notes') or '' }}</textarea></div>
+      <button class="btn btn-success">{{ t('common.save') }}</button>{% if form.get('id') %}<a href="{{ url_for('farms') }}" class="btn btn-outline-secondary">{{ t('common.cancel') }}</a>{% endif %}
+    </form></div></div></div>
+  <div class="col-lg-7">
+    {% if farms %}<div class="row g-3">{% for f in farms %}
+      <div class="col-md-6"><div class="farm-card p-3 h-100">
+        <div class="d-flex justify-content-between align-items-start"><div><h6 class="mb-0">{{ f.name }}</h6><div class="small text-muted"><i class="bi bi-geo-alt"></i> {{ f.location }}</div></div>{% if f.main_crop %}<span class="badge text-bg-success">{{ tn('crop', f.main_crop) }}</span>{% endif %}</div>
+        <dl class="row small mt-3 mb-2"><dt class="col-5 text-muted fw-normal">{{ t('farm.area') }}</dt><dd class="col-7 mb-1">{{ ('%g'|format(f.area_acres) ~ ' ' ~ t('farm.acres')) if f.area_acres else '-' }}</dd>
+          <dt class="col-5 text-muted fw-normal">{{ t('farm.soil') }}</dt><dd class="col-7 mb-1">{{ tn('soil', f.soil_type) if f.soil_type else '-' }}</dd>
+          <dt class="col-5 text-muted fw-normal">{{ t('farm.water') }}</dt><dd class="col-7 mb-1">{{ tn('wsrc', f.water_source) if f.water_source else '-' }}</dd></dl>
+        {% if f.notes %}<p class="small text-muted">{{ f.notes }}</p>{% endif %}
+        <div class="d-flex gap-1 flex-wrap"><a class="btn btn-sm btn-outline-success" href="{{ url_for('farms', edit=f.id) }}">{{ t('common.edit') }}</a>
+          <form method="post" action="{{ url_for('farm_delete', farm_id=f.id) }}" onsubmit="return confirm('{{ t('common.confirm_delete') }}');"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><button class="btn btn-sm btn-outline-danger">{{ t('common.delete') }}</button></form></div>
+      </div></div>{% endfor %}</div>
+    {% else %}<div class="card stat-card"><div class="card-body">{{ empty_state('geo-alt', t('farm.none'), t('farm.none_d')) }}</div></div>{% endif %}
+  </div></div>
+{% endblock %}

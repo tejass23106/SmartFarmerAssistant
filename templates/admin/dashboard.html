@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import status_badge with context %}
+{% block title %}{{ t('adm.dashboard') }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h3><i class="bi bi-speedometer2 text-forest"></i> {{ t('adm.dashboard') }}</h3><p class="sub">{{ t('adm.sub') }}</p></div>
+  <div class="d-flex gap-2 flex-wrap">
+    <a class="btn btn-outline-success btn-sm" href="{{ url_for('admin_export_pdf') }}"><i class="bi bi-file-earmark-pdf"></i> {{ t('adm.export_pdf') }}</a>
+    <a class="btn btn-outline-success btn-sm" href="{{ url_for('admin_export_excel') }}"><i class="bi bi-file-earmark-excel"></i> {{ t('adm.export_xlsx') }}</a></div></div>
+
+<div class="row g-3 mb-3">
+  {% for label, key, icon, ep in [('adm.farmers','farmers','people','admin_users'), ('adm.active','active','person-check',None), ('adm.predictions','predictions','cpu',None),
+      ('adm.recommendations','recommendations','tree',None), ('adm.reports','reports','clipboard2-pulse','admin_reports'), ('adm.pending','pending','hourglass-split','admin_reports'), ('adm.messages','messages','envelope','admin_messages')] %}
+  <div class="col-6 col-lg-3 col-xl"><a class="stat-link" href="{{ url_for(ep) if ep else '#' }}"><div class="card stat-card h-100"><div class="card-body">
+    <i class="bi bi-{{ icon }}"></i><h2>{{ totals[key] }}</h2><div class="text-muted small">{{ t(label) }}</div></div></div></a></div>
+  {% endfor %}
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-lg-6"><div class="card stat-card h-100"><div class="card-body text-start"><h6 class="panel-title"><i class="bi bi-person-plus text-success"></i> {{ t('adm.monthly') }}</h6><div class="chart-box"><canvas id="regChart"></canvas></div></div></div></div>
+  <div class="col-lg-6"><div class="card stat-card h-100"><div class="card-body text-start"><h6 class="panel-title"><i class="bi bi-camera text-success"></i> {{ t('adm.detections') }}</h6>
+    <div class="chart-box"><canvas id="detChart"></canvas></div>
+    <div class="small text-muted mt-2">{{ t('adm.low_conf') }}: <strong>{{ low_conf }}</strong> ({{ low_conf_pct }}%)</div></div></div></div>
+</div>
+<div class="row g-3 mb-3">
+  <div class="col-lg-4"><div class="card stat-card h-100"><div class="card-body text-start"><h6 class="panel-title">{{ t('adm.top_diseases') }}</h6>{% if charts.diseases %}<div class="chart-box"><canvas id="disChart"></canvas></div>{% else %}<p class="text-muted small">{{ t('adm.no_data') }}</p>{% endif %}</div></div></div>
+  <div class="col-lg-4"><div class="card stat-card h-100"><div class="card-body text-start"><h6 class="panel-title">{{ t('adm.top_crops') }}</h6>{% if charts.rec_crops %}<div class="chart-box"><canvas id="recChart"></canvas></div>{% else %}<p class="text-muted small">{{ t('adm.no_data') }}</p>{% endif %}</div></div></div>
+  <div class="col-lg-4"><div class="card stat-card h-100"><div class="card-body text-start"><h6 class="panel-title">{{ t('adm.reports_status') }}</h6>{% if totals.reports %}<div class="chart-box"><canvas id="statChart"></canvas></div>{% else %}<p class="text-muted small">{{ t('adm.no_data') }}</p>{% endif %}</div></div></div>
+</div>
+<div class="row g-3 mb-3">
+  <div class="col-lg-6"><div class="card stat-card h-100"><div class="card-body text-start"><h6 class="panel-title">{{ t('adm.rep_crop') }}</h6>{% if charts.rep_crop %}<div class="chart-box"><canvas id="repCropChart"></canvas></div>{% else %}<p class="text-muted small">{{ t('adm.no_data') }}</p>{% endif %}</div></div></div>
+  <div class="col-lg-6"><div class="card stat-card h-100"><div class="card-body text-start"><h6 class="panel-title">{{ t('adm.rep_loc') }}</h6>{% if charts.rep_loc %}<div class="chart-box"><canvas id="locChart"></canvas></div>{% else %}<p class="text-muted small">{{ t('adm.loc_none') }}</p>{% endif %}</div></div></div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-lg-6"><div class="card stat-card h-100"><div class="card-body text-start"><div class="d-flex justify-content-between"><h6 class="panel-title">{{ t('adm.recent_reports') }}</h6><a class="small" href="{{ url_for('admin_reports') }}">{{ t('common.view_all') }}</a></div>
+    {% if recent_reports %}<ul class="mini-list">{% for r in recent_reports %}<li class="d-flex justify-content-between"><span>{{ r.full_name }}: {{ r.crop_name }} - {{ r.disease_name }}</span>{{ status_badge(r.status) }}</li>{% endfor %}</ul>{% else %}<p class="text-muted small">{{ t('adm.none') }}</p>{% endif %}</div></div></div>
+  <div class="col-lg-6"><div class="card stat-card h-100"><div class="card-body text-start"><h6 class="panel-title">{{ t('adm.recent_users') }}</h6>
+    {% if recent_users %}<ul class="mini-list">{% for u in recent_users %}<li class="d-flex justify-content-between"><span>{{ u.full_name }} <span class="text-muted small">{{ u.email }}</span></span><span class="small text-muted">{{ u.created_at[:10] }}</span></li>{% endfor %}</ul>{% else %}<p class="text-muted small">{{ t('adm.none') }}</p>{% endif %}</div></div></div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-lg-7"><div class="card stat-card h-100"><div class="card-body text-start"><h6 class="panel-title">{{ t('adm.activity') }}</h6>
+    {% if activity %}<ul class="mini-list">{% for a in activity %}<li class="d-flex justify-content-between"><span><strong>{{ a.full_name or '-' }}</strong> &middot; {{ t('act.' ~ a.action) if ('act.' ~ a.action) in ['act.registered','act.login','act.farm_added','act.prediction','act.recommendation','act.report','act.irrigation','act.soil_check','act.chat','act.calendar_plan','act.device_added'] else a.action }} <span class="text-muted small">{{ a.detail or '' }}</span></span><span class="small text-muted">{{ a.created_at[5:16] }}</span></li>{% endfor %}</ul>
+    {% else %}<p class="text-muted small">{{ t('adm.none') }}</p>{% endif %}</div></div></div>
+  <div class="col-lg-5"><div class="card stat-card h-100"><div class="card-body text-start"><h6 class="panel-title">{{ t('adm.manage') }}</h6>
+    <div class="d-grid gap-2">
+      <a class="btn btn-outline-success text-start" href="{{ url_for('admin_users') }}"><i class="bi bi-people"></i> {{ t('adm.manage_users') }}</a>
+      <a class="btn btn-outline-success text-start" href="{{ url_for('admin_reports') }}"><i class="bi bi-clipboard2-pulse"></i> {{ t('adm.manage_reports') }}</a>
+      <a class="btn btn-outline-success text-start" href="{{ url_for('admin_crops') }}"><i class="bi bi-tree"></i> {{ t('adm.manage_content') }}</a>
+      <a class="btn btn-outline-success text-start" href="{{ url_for('admin_schemes') }}"><i class="bi bi-bank"></i> {{ t('adm.schemes') }}</a>
+      <a class="btn btn-outline-success text-start" href="{{ url_for('admin_messages') }}"><i class="bi bi-envelope"></i> {{ t('adm.messages') }}{% if totals.messages %} <span class="badge text-bg-warning">{{ totals.messages }}</span>{% endif %}</a></div>
+    <p class="small text-muted mt-3 mb-0">{{ t('adm.deactivated') }}: {{ totals.deactivated }}</p></div></div></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+  var G = ['#1b6b3e', '#3f9d4e', '#7cc47f', '#f2b53c', '#a7d3a9', '#0e3b26', '#8fbf6a', '#c7e3c9'];
+  var opt = {maintainAspectRatio: false, plugins: {legend: {display: false}}, scales: {y: {beginAtZero: true, ticks: {precision: 0}}}};
+  new Chart(document.getElementById('regChart'), {type: 'line', data: {labels: {{ charts.reg_labels|tojson }}, datasets: [{label: '{{ t("adm.farmers") }}', data: {{ charts.reg_values|tojson }}, borderColor: '#1b6b3e', backgroundColor: 'rgba(63,157,78,.18)', fill: true, tension: .3}]}, options: opt});
+  new Chart(document.getElementById('detChart'), {type: 'bar', data: {labels: {{ charts.det_labels|tojson }}, datasets: [{data: {{ charts.det_values|tojson }}, backgroundColor: '#3f9d4e', borderRadius: 6}]}, options: opt});
+  {% if charts.diseases %}new Chart(document.getElementById('disChart'), {type: 'bar', data: {labels: {{ charts.diseases|map('first')|list|tojson }}, datasets: [{data: {{ charts.diseases|map('last')|list|tojson }}, backgroundColor: G, borderRadius: 6}]}, options: {maintainAspectRatio: false, indexAxis: 'y', plugins: {legend: {display: false}}}});{% endif %}
+  {% if charts.rec_crops %}new Chart(document.getElementById('recChart'), {type: 'bar', data: {labels: {{ charts.rec_crops|map('first')|list|tojson }}, datasets: [{data: {{ charts.rec_crops|map('last')|list|tojson }}, backgroundColor: G, borderRadius: 6}]}, options: {maintainAspectRatio: false, indexAxis: 'y', plugins: {legend: {display: false}}}});{% endif %}
+  {% if totals.reports %}new Chart(document.getElementById('statChart'), {type: 'doughnut', data: {labels: ['{{ t("status.Pending") }}', '{{ t("status.Reviewed") }}', '{{ t("status.Resolved") }}'], datasets: [{data: {{ charts.rep_status|tojson }}, backgroundColor: ['#f2b53c', '#4aa3df', '#2e8b45']}]}, options: {maintainAspectRatio: false, plugins: {legend: {position: 'bottom'}}}});{% endif %}
+  {% if charts.rep_crop %}new Chart(document.getElementById('repCropChart'), {type: 'bar', data: {labels: {{ charts.rep_crop|map('first')|list|tojson }}, datasets: [{data: {{ charts.rep_crop|map('last')|list|tojson }}, backgroundColor: '#3f9d4e', borderRadius: 6}]}, options: opt});{% endif %}
+  {% if charts.rep_loc %}new Chart(document.getElementById('locChart'), {type: 'bar', data: {labels: {{ charts.rep_loc|map('first')|list|tojson }}, datasets: [{data: {{ charts.rep_loc|map('last')|list|tojson }}, backgroundColor: '#f2b53c', borderRadius: 6}]}, options: opt});{% endif %}
+</script>
+{% endblock %}

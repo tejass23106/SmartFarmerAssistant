@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block title %}{{ t('nav.disease') }} - Smart Farmer{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h3><i class="bi bi-camera text-forest"></i> {{ t('nav.disease') }}</h3>
+    <p class="sub">{{ t('dis.sub') }}</p>
+  </div>
+</div>
+{% if not model_ready %}<div class="alert alert-warning"><i class="bi bi-exclamation-triangle"></i> {{ t('dis.no_model')
+  }} <code>python model/train_disease_model.py</code></div>{% endif %}
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card stat-card">
+      <div class="card-body text-start">
+        <form method="post" enctype="multipart/form-data" id="detectForm" data-ajax novalidate
+          data-err-type="{{ t('dis.err_type') }}" data-err-size="{{ t('dis.err_size') }}"
+          data-err-none="{{ t('dis.err_none') }}" data-err-camera="{{ t('dis.err_camera') }}"
+          data-err-network="{{ t('dis.err_network') }}" data-uploading="{{ t('dis.uploading') }}"
+          data-analysing="{{ t('dis.analysing') }}">
+          <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+          <div class="preview-box mb-2" id="previewBox">
+            <div id="previewPlaceholder" class="text-center text-muted"><i class="bi bi-image fs-1"></i>
+              <p class="mb-0">{{ t('dis.drop_here') }}</p>
+            </div>
+            <img id="imagePreview" class="d-none" alt="Leaf preview"><video id="cameraVideo" class="d-none" playsinline
+              muted></video>
+          </div>
+          <div id="uploadMsg" class="alert alert-warning py-2 small d-none"></div>
+          <input type="file" name="leaf_image" id="leafImage" class="form-control mb-2"
+            accept=".jpg,.jpeg,.png,image/jpeg,image/png" required>
+          <input type="file" id="cameraInput" class="d-none" accept="image/*" capture="environment">
+          <div class="d-flex gap-2 mb-3"><button type="button" class="btn btn-outline-success flex-fill"
+              id="cameraBtn"><i class="bi bi-camera-fill"></i> {{ t('dis.take_photo') }}</button>
+            <button type="button" class="btn btn-success d-none" id="captureBtn"><i class="bi bi-record-circle"></i> {{
+              t('dis.capture') }}</button>
+          </div>
+          <div class="upload-progress mb-2" id="uploadProgress">
+            <div class="small text-muted mb-1" id="progressLabel"></div>
+            <div class="progress" style="height:10px">
+              <div class="progress-bar bg-success" style="width:0"></div>
+            </div>
+          </div>
+          <button class="btn btn-success w-100" id="detectBtn"><i class="bi bi-cpu"></i> {{ t('dis.detect') }}</button>
+          <div class="form-text mt-2">{{ t('dis.limits') }}</div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card stat-card mb-3">
+      <div class="card-body text-start">
+        <h6 class="panel-title"><i class="bi bi-lightbulb text-warning"></i> {{ t('dis.tips') }}</h6>
+        <ul class="mb-2 small">
+          <li>{{ t('dis.tip1') }}</li>
+          <li>{{ t('dis.tip2') }}</li>
+          <li>{{ t('dis.tip3') }}</li>
+        </ul>
+        <div class="small"><strong>{{ t('dis.supported') }}:</strong> {% if supported %}{{ supported|join(', ') }}{%
+          else %}<span class="text-muted">{{ t('dis.not_trained') }}</span>{% endif %}</div>
+        <div class="small text-muted mt-1">{{ t('dis.supported_note') }}</div>
+      </div>
+    </div>
+    <div class="card stat-card">
+      <div class="card-body text-start">
+        <h6 class="panel-title">{{ t('dis.recent') }}</h6>
+        <ul class="list-group list-group-flush">
+          {% for r in recent %}<li class="list-group-item px-0 d-flex justify-content-between align-items-center"><a
+              href="{{ url_for('disease_result', prediction_id=r.id) }}">{{ tn('crop', r.crop_name) }} - {{
+              r.disease_name }}</a><span class="badge text-bg-light">{{ '%.1f'|format(r.confidence) }}%</span></li>
+          {% else %}<li class="list-group-item text-muted px-0">{{ t('dash.no_det') }}</li>{% endfor %}</ul>
+        <a class="small" href="{{ url_for('history', tab='diagnoses') }}">{{ t('common.view_all') }}</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

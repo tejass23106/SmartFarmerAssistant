@@ -1,0 +1,288 @@
+{% extends 'base.html' %}
+{% block title %}{{ t('dis.result_title') }} - Smart Farmer{% endblock %}
+
+{% block content %}
+
+<div class="page-head">
+  <div>
+    <h3>
+      <i class="bi bi-clipboard2-check text-forest"></i>
+      {{ t('dis.result_title') }}
+    </h3>
+  </div>
+
+  <a href="{{ url_for('disease_detection') }}"
+     class="btn btn-outline-success btn-sm">
+    <i class="bi bi-camera"></i> {{ t('dis.again') }}
+  </a>
+</div>
+
+{% if api_used %}
+
+<div class="alert alert-warning">
+  <i class="bi bi-exclamation-triangle"></i>
+  <strong>Plant.id AI analysis</strong><br>
+  These are API-generated suggestions, not confirmed crop identifications
+  or disease diagnoses. Verify results before taking treatment decisions.
+</div>
+
+<div class="row g-3">
+
+  <!-- Uploaded image -->
+  <div class="col-lg-5">
+    <div class="card stat-card">
+      <img
+        src="{{ url_for('static', filename='uploads/' ~ p.image_path) }}"
+        class="result-img card-img-top"
+        alt="Uploaded plant image"
+        style="width:100%;height:auto;object-fit:contain;">
+
+      <div class="card-body">
+        <span class="badge text-bg-primary mb-2">
+          Plant.id API analysis
+        </span>
+        <br>
+        <small class="text-muted">{{ p.created_at }}</small>
+      </div>
+    </div>
+  </div>
+
+  <!-- API results -->
+  <div class="col-lg-7">
+
+    <div class="card result-card mb-3">
+      <div class="card-body">
+
+        <h5 class="mb-3">
+          <i class="bi bi-flower1 text-success"></i>
+          Plant identification suggestions
+        </h5>
+
+        {% if classification %}
+          {% for item in classification %}
+          <div class="mb-3">
+            <div class="d-flex justify-content-between">
+              <strong>{{ item.name }}</strong>
+              <span>{{ '%.2f'|format(item.probability * 100) }}%</span>
+            </div>
+
+            <progress
+              class="w-100"
+              value="{{ item.probability * 100 }}"
+              max="100">
+            </progress>
+          </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-muted">No plant identification suggestions returned.</p>
+        {% endif %}
+
+        <hr>
+
+        <h5 class="mb-3">
+          <i class="bi bi-bug text-danger"></i>
+          Disease suggestions
+        </h5>
+
+        {% if diseases %}
+          {% for item in diseases %}
+          <div class="mb-3">
+            <div class="d-flex justify-content-between">
+              <strong>{{ item.name }}</strong>
+              <span>{{ '%.2f'|format(item.probability * 100) }}%</span>
+            </div>
+
+            <progress
+              class="w-100"
+              value="{{ item.probability * 100 }}"
+              max="100">
+            </progress>
+          </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-muted">No disease suggestions returned.</p>
+        {% endif %}
+
+        <hr>
+
+        <h6>Healthy probability</h6>
+
+        {% if healthy_probability is not none %}
+          <strong>
+            {{ '%.2f'|format(healthy_probability * 100) }}%
+          </strong>
+
+          <progress
+            class="w-100"
+            value="{{ healthy_probability * 100 }}"
+            max="100">
+          </progress>
+        {% else %}
+          <p class="text-muted">Not provided by API.</p>
+        {% endif %}
+
+        <hr>
+
+        <p class="small text-muted mb-3">
+          The percentages represent API suggestion probabilities.
+          They should not be interpreted as verified diagnostic accuracy.
+        </p>
+
+        <a href="{{ safe_url('report_new', prediction_id=p.id) }}"
+           class="btn btn-warning">
+          <i class="bi bi-flag"></i> {{ t('nav.report') }}
+        </a>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{% else %}
+
+<!-- Existing local-model result display -->
+{% if low %}
+<div class="alert alert-warning">
+  <i class="bi bi-exclamation-triangle"></i>
+  {{ t('dis.low_conf', pct=threshold|int) }}
+</div>
+{% endif %}
+
+<div class="row g-3">
+
+  <div class="col-lg-5">
+    <div class="card stat-card">
+      <img
+        src="{{ url_for('static', filename='uploads/' ~ p.image_path) }}"
+        class="result-img card-img-top"
+        alt="{{ 'Potato Tuber' if is_tuber else 'Plant Leaf' }}"
+        style="width:100%;height:auto;object-fit:contain;">
+
+      <div class="card-body text-start">
+        <span class="badge text-bg-success mb-2">
+          {{ 'Potato Tuber' if is_tuber else 'Leaf' }}
+        </span>
+        <br>
+        <small class="text-muted">{{ p.created_at }}</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+
+    <div class="card result-card mb-3">
+      <div class="card-body">
+
+        <span class="badge {{ 'text-bg-success' if healthy else 'text-bg-danger' }} mb-2">
+          {{ t('dis.healthy') if healthy else t('dis.diseased') }}
+        </span>
+
+        <h3 class="mb-1">
+          {{ tn('crop', p.crop_name) }} - {{ tn('disease', p.disease_name) }}
+        </h3>
+
+        <table class="table table-sm mb-2">
+          <tr>
+            <th>{{ t('dis.crop') }}</th>
+            <td>{{ tn('crop', p.crop_name) }}</td>
+          </tr>
+          <tr>
+            <th>{{ t('dis.disease') }}</th>
+            <td>{{ tn('disease', p.disease_name) }}</td>
+          </tr>
+          <tr>
+            <th>{{ t('dis.confidence') }}</th>
+            <td>{{ '%.1f'|format(p.confidence) }}%</td>
+          </tr>
+        </table>
+
+        {% set cf = p.confidence|float %}
+
+        <progress class="w-100" value="{{ cf|int }}" max="100"></progress>
+
+        {% if top|length > 1 %}
+        <h6>{{ t('dis.others') }}</h6>
+        <ul class="small">
+          {% for name, pct in top[1:] %}
+          <li>{{ name }} ({{ pct }}%)</li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+
+        <a href="{{ safe_url('report_new', prediction_id=p.id) }}"
+           class="btn btn-warning">
+          <i class="bi bi-flag"></i> {{ t('nav.report') }}
+        </a>
+
+      </div>
+    </div>
+
+    {% if info %}
+    <div class="card stat-card mb-3">
+      <div class="card-body text-start">
+
+        {% if info.description %}
+        <h6>{{ t('dis.about') }}</h6>
+        <p>{{ info.description }}</p>
+        {% endif %}
+
+        {% if not healthy %}
+
+          {% if info.symptoms %}
+          <h6>{{ t('dis.symptoms') }}</h6>
+          <p>{{ info.symptoms }}</p>
+          {% endif %}
+
+          {% if info.causes %}
+          <h6>{{ t('dis.causes') }}</h6>
+          <p>{{ info.causes }}</p>
+          {% endif %}
+
+          {% if info.prevention %}
+          <h6>{{ t('dis.prevention') }}</h6>
+          <p>{{ info.prevention }}</p>
+          {% endif %}
+
+          {% if info.management or info.treatment %}
+          <h6>{{ t('dis.treatment') }}</h6>
+          {% if info.management %}
+          <p>{{ info.management }}</p>
+          {% endif %}
+          {% if info.treatment %}
+          <p>{{ info.treatment }}</p>
+          {% endif %}
+          {% endif %}
+
+        {% else %}
+
+          {% if info.prevention %}
+          <h6>{{ t('dis.keep_healthy') }}</h6>
+          <p>{{ info.prevention }}</p>
+          {% endif %}
+
+        {% endif %}
+
+      </div>
+    </div>
+    {% else %}
+    <div class="alert alert-secondary">
+      {{ t('dis.no_info') }}
+    </div>
+    {% endif %}
+
+    <div class="alert alert-light border small">
+      {{ t('dis.disclaimer') }}
+    </div>
+
+    {% if supported %}
+    <div class="small text-muted">
+      {{ t('dis.supported') }}: {{ supported|join(', ') }}
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+{% endif %}
+{% endblock %}

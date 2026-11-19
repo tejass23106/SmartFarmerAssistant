@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}{{ t('nav.crop_advisory') }} - Smart Farmer{% endblock %}
+{% block content %}
+<div class="page-head"><div><h3><i class="bi bi-tree text-forest"></i> {{ t('nav.crop_advisory') }}</h3><p class="sub">{{ t('adv.sub') }}</p></div>
+  <a href="{{ safe_url('history') }}" class="btn btn-outline-success btn-sm"><i class="bi bi-clock-history"></i> {{ t('adv.past') }}</a></div>
+<ul class="nav nav-pills mb-3 gap-1">
+  <li class="nav-item"><a class="nav-link {{ 'active' if mode == 'soil_test' }}" href="{{ url_for('crop_recommendation', mode='soil_test') }}"><i class="bi bi-moisture"></i> {{ t('adv.mode_soil_test') }}</a></li>
+  <li class="nav-item"><a class="nav-link {{ 'active' if mode == 'quick' }}" href="{{ url_for('crop_recommendation', mode='quick') }}"><i class="bi bi-lightning-charge"></i> {{ t('adv.mode_quick') }}</a></li></ul>
+
+<div class="row g-3">
+  <div class="col-xl-4"><div class="card stat-card"><div class="card-body text-start">
+    <form method="post" novalidate>
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}"><input type="hidden" name="mode" value="{{ mode }}">
+      {% if farms %}<div class="mb-3"><label class="form-label" for="farmSelect">{{ t('adv.use_farm') }}</label>
+        <select name="farm_id" id="farmSelect" class="form-select"><option value="">-</option>
+          {% for f in farms %}<option value="{{ f.id }}" data-soil="{{ f.soil_type or '' }}" data-location="{{ f.location }}" {{ 'selected' if form.get('farm_id')|string == f.id|string }}>{{ f.name }} ({{ f.location }})</option>{% endfor %}</select></div>
+      {% else %}<div class="alert alert-light border small"><i class="bi bi-geo-alt"></i> <a href="{{ safe_url('farms') }}">{{ t('nav.farms') }}</a></div>{% endif %}
+
+      {% if mode == 'soil_test' %}
+        {% if not ml_ready %}<div class="alert alert-warning small"><i class="bi bi-info-circle"></i> {{ t('adv.no_model') }}</div>{% endif %}
+        <div class="row g-2 mb-3">
+          {% for key, (label, lo, hi) in limits.items() %}
+          <div class="col-6"><label class="form-label small mb-1">{{ t('adv.f_' ~ key) }}</label>
+            <input type="number" step="any" min="{{ lo }}" max="{{ hi }}" name="{{ key }}" class="form-control" value="{{ form.get(key, '') }}" required>
+            <div class="form-text">{{ lo }} - {{ hi }}</div></div>{% endfor %}
+        </div>
+      {% else %}
+        <div class="mb-3"><label class="form-label" for="soilType">{{ t('farm.soil') }} *</label>
+          <select name="soil_type" id="soilType" class="form-select" required><option value="">-</option>
+            {% for s in soils %}<option value="{{ s }}" {{ 'selected' if form.get('soil_type') == s }}>{{ tn('soil', s) }}</option>{% endfor %}</select></div>
+        <div class="mb-3"><label class="form-label">{{ t('adv.season') }} *</label>
+          <select name="season" class="form-select" required><option value="">-</option>
+            {% for s in seasons %}<option value="{{ s }}" {{ 'selected' if form.get('season') == s }}>{{ tn('season', s) }} ({{ season_hints[s] }})</option>{% endfor %}</select></div>
+        <div class="mb-3"><label class="form-label">{{ t('adv.water') }} *</label>
+          <select name="water_availability" class="form-select" required><option value="">-</option>
+            {% for w in water_levels %}<option value="{{ w }}" {{ 'selected' if form.get('water_availability') == w }}>{{ tn('water', w) }} - {{ t('adv.water_' ~ w) }}</option>{% endfor %}</select></div>
+      {% endif %}
+      <div class="mb-3"><label class="form-label" for="location">{{ t('farm.location') }}</label>
+        <input name="location" id="location" class="form-control" maxlength="120" value="{{ form.get('location', '') }}" placeholder="{{ t('farm.location_ph') }}"></div>
+      <button class="btn btn-success w-100"><i class="bi bi-search"></i> {{ t('adv.get') }}</button>
+    </form></div></div></div>
+
+  <div class="col-xl-8">
+    {% if result %}{% include '_reco_result.html' %}
+      {% if result.id %}<div class="mt-2 small text-muted"><i class="bi bi-check2-circle text-success"></i> {{ t('adv.saved') }} <a href="{{ url_for('recommendation_detail', rec_id=result.id) }}">{{ t('nav.history') }}</a></div>{% endif %}
+    {% else %}<div class="card stat-card h-100"><div class="card-body text-muted py-5 d-flex flex-column justify-content-center"><i class="bi bi-clipboard-data" style="font-size:2.4rem;color:#9cc7a2"></i>
+      <p class="mt-2 mb-0">{{ t('adv.placeholder') }}</p></div></div>{% endif %}
+  </div>
+</div>
+{% endblock %}

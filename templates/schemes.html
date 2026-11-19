@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import empty_state with context %}
+{% block title %}{{ t('nav.schemes') }} - Smart Farmer{% endblock %}
+{% block content %}
+<div class="page-head"><div><h3><i class="bi bi-bank text-forest"></i> {{ t('nav.schemes') }}</h3><p class="sub">{{ t('scheme.sub') }}</p></div></div>
+<div class="alert alert-light border small"><i class="bi bi-shield-check"></i> {{ t('scheme.disclaimer') }}</div>
+{% if categories %}<div class="mb-3 d-flex flex-wrap gap-2">
+  <a class="btn btn-sm {{ 'btn-success' if not category else 'btn-outline-success' }}" href="{{ url_for('schemes_page') }}">{{ t('scheme.all') }}</a>
+  {% for c in categories %}<a class="btn btn-sm {{ 'btn-success' if category == c else 'btn-outline-success' }}" href="{{ url_for('schemes_page', category=c) }}">{{ c }}</a>{% endfor %}</div>{% endif %}
+{% if schemes %}
+<div class="row g-3">{% for s in schemes %}
+  <div class="col-xl-6"><div class="card stat-card h-100"><div class="card-body text-start">
+    <div class="d-flex justify-content-between align-items-start gap-2"><h5 class="mb-1">{{ s.name }}</h5>{% if s.category %}<span class="badge text-bg-light border">{{ s.category }}</span>{% endif %}</div>
+    <p class="mb-2">{{ s.description }}</p>
+    <dl class="mb-2 small">
+      {% if s.eligibility %}<dt>{{ t('scheme.eligibility') }}</dt><dd>{{ s.eligibility }}</dd>{% endif %}
+      {% if s.benefits %}<dt>{{ t('scheme.benefits') }}</dt><dd>{{ s.benefits }}</dd>{% endif %}
+      {% if s.documents %}<dt>{{ t('scheme.documents') }}</dt><dd>{{ s.documents }}</dd>{% endif %}
+      {% if s.process %}<dt>{{ t('scheme.process') }}</dt><dd>{{ s.process }}</dd>{% endif %}
+    </dl>
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+      {% if s.official_url %}<a class="btn btn-sm btn-success" href="{{ s.official_url }}" target="_blank" rel="noopener noreferrer"><i class="bi bi-box-arrow-up-right"></i> {{ t('scheme.official') }}</a>{% endif %}
+      <span class="small text-muted">{{ t('scheme.source') }}: {{ s.source_name or '-' }}{% if s.source_url %} (<a href="{{ s.source_url }}" target="_blank" rel="noopener noreferrer">{{ t('scheme.link') }}</a>){% endif %}</span></div>
+    <div class="small text-muted mt-2"><i class="bi bi-calendar-check"></i> {{ t('scheme.verified') }}: {{ s.last_verified or t('scheme.not_verified') }}</div>
+  </div></div></div>
+{% endfor %}</div>
+{% else %}<div class="card stat-card"><div class="card-body">{{ empty_state('bank', t('scheme.none'), t('scheme.none_d')) }}</div></div>{% endif %}
+{% endblock %}

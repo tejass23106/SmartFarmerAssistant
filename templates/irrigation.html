@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import empty_state, irr_badge with context %}
+{% block title %}{{ t('nav.irrigation') }} - Smart Farmer{% endblock %}
+{% block content %}
+<div class="page-head"><div><h3><i class="bi bi-droplet text-forest"></i> {{ t('nav.irrigation') }}</h3><p class="sub">{{ t('irr.sub') }}</p></div>
+  <a href="{{ url_for('devices_page') }}" class="btn btn-outline-success btn-sm"><i class="bi bi-cpu"></i> {{ t('irr.sensors') }}</a></div>
+<div class="alert alert-light border small"><i class="bi bi-info-circle"></i> {{ t('irr.no_control') }}</div>
+<div class="row g-3">
+  <div class="col-xl-5"><div class="card stat-card"><div class="card-body text-start">
+    <form method="post" novalidate><input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      {% if farms %}<div class="mb-3"><label class="form-label">{{ t('adv.use_farm') }}</label><select name="farm_id" id="farmSelect" class="form-select"><option value="">-</option>
+        {% for f in farms %}<option value="{{ f.id }}" data-soil="{{ f.soil_type or '' }}" data-crop="{{ f.main_crop or '' }}" data-location="{{ f.location }}" {{ 'selected' if form.get('farm_id')|string == f.id|string }}>{{ f.name }}</option>{% endfor %}</select></div>{% endif %}
+      <div class="row"><div class="col-6 mb-3"><label class="form-label">{{ t('irr.crop') }} *</label><select name="crop" id="cropSelect" class="form-select" required><option value="">-</option>
+          {% for c in crops %}<option value="{{ c }}" {{ 'selected' if form.get('crop') == c }}>{{ tn('crop', c) }}</option>{% endfor %}</select></div>
+        <div class="col-6 mb-3"><label class="form-label">{{ t('farm.soil') }} *</label><select name="soil_type" id="soilType" class="form-select" required><option value="">-</option>
+          {% for s in soils %}<option value="{{ s }}" {{ 'selected' if form.get('soil_type') == s }}>{{ tn('soil', s) }}</option>{% endfor %}</select></div></div>
+      {% if sensor %}<div class="alert alert-success py-2 small"><div class="form-check"><input class="form-check-input" type="checkbox" name="use_sensor" value="1" id="useSensor" {{ 'checked' if form.get('use_sensor') == '1' or not form }}>
+        <label class="form-check-label" for="useSensor"><i class="bi bi-cpu"></i> {{ t('irr.use_sensor') }}: <strong>{{ sensor.soil_moisture }}%</strong> ({{ sensor.device_name }}, {{ sensor.recorded_at[:16] }})</label></div></div>{% endif %}
+      <div class="row">
+        <div class="col-6 mb-3"><label class="form-label">{{ t('irr.moisture') }} (%) *</label><input type="number" step="any" min="0" max="100" name="soil_moisture" class="form-control" value="{{ form.get('soil_moisture', '') }}" {{ '' if sensor else 'required' }}></div>
+        <div class="col-6 mb-3"><label class="form-label">{{ t('irr.temperature') }} (°C) *</label><input type="number" step="any" min="-10" max="60" name="temperature" class="form-control" value="{{ form.get('temperature', '') }}" required></div>
+        <div class="col-6 mb-3"><label class="form-label">{{ t('wx.humidity') }} (%) *</label><input type="number" step="any" min="0" max="100" name="humidity" class="form-control" value="{{ form.get('humidity', '') }}" required></div>
+        <div class="col-6 mb-3"><label class="form-label">{{ t('irr.rainfall') }} *</label><input type="number" step="any" min="0" max="500" name="recent_rainfall" class="form-control" value="{{ form.get('recent_rainfall', '') }}" required></div></div>
+      <div class="form-text mb-3">{{ t('irr.moisture_help') }}</div>
+      <button class="btn btn-success w-100"><i class="bi bi-droplet-half"></i> {{ t('irr.check') }}</button></form></div></div></div>
+  <div class="col-xl-7">
+    {% if result %}{% set st = result.status %}
+    <div class="card result-card mb-3"><div class="card-body">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2"><h4 class="mb-0">{{ irr_badge(st) }}</h4><span class="badge text-bg-light border">{{ t('irr.src_' ~ result.source) }}</span></div>
+      <p class="mt-3 mb-1 fs-5">{{ t('irr.msg.' ~ st) }}</p>
+      <table class="table table-sm mt-2 mb-2"><tr><th style="width:42%">{{ t('irr.crop') }}</th><td>{{ tn('crop', result.crop) }} ({{ tn('soil', result.soil) }})</td></tr>
+        <tr><th>{{ t('irr.moisture_status') }}</th><td>{{ t('irr.state.' ~ result.moisture_state) }} ({{ result.inputs.soil_moisture }}%; {{ t('irr.target') }} &asymp; {{ result.threshold }}%)</td></tr>
+        <tr><th>{{ t('irr.timing') }}</th><td>{{ t('irr.timing.' ~ result.timing) }}</td></tr>
+        {% if result.forecast_rain is not none %}<tr><th>{{ t('irr.forecast_rain') }}</th><td>{{ result.forecast_rain }} mm</td></tr>{% endif %}</table>
+      <h6><i class="bi bi-droplet text-success"></i> {{ t('irr.water_mgmt') }}</h6><ul class="mb-0">{% for k in result.suggestions %}<li>{{ t(k) }}</li>{% endfor %}</ul></div></div>
+    {% else %}<div class="card stat-card mb-3"><div class="card-body text-muted py-5"><i class="bi bi-droplet-half" style="font-size:2.4rem;color:#9cc7a2"></i><p class="mt-2 mb-0">{{ t('irr.placeholder') }}</p></div></div>{% endif %}
+    <div class="card stat-card"><div class="card-body text-start"><h6 class="panel-title">{{ t('irr.recent') }}</h6>
+      {% if recent %}<ul class="mini-list">{% for r in recent %}<li class="d-flex justify-content-between"><span>{{ tn('crop', r.crop) }} &middot; {{ r.soil_moisture }}% <span class="text-muted">{{ r.created_at[:16] }}</span></span>{{ irr_badge(r.status) }}</li>{% endfor %}</ul>
+      {% else %}{{ empty_state('droplet', t('dash.no_irr'), t('dash.no_irr_d')) }}{% endif %}</div></div>
+  </div></div>
+{% endblock %}

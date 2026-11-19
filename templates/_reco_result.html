@@ -1,0 +1,38 @@
+{# Shared by crop_recommendation.html and recommendation_detail.html. Needs: result, info #}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+  <h5 class="mb-0"><i class="bi bi-stars text-success"></i> {{ t('adv.result_title') }}</h5><span class="badge text-bg-light border">{{ result.method }}</span></div>
+{% set inp = result.inputs %}
+<div class="card stat-card mb-3"><div class="card-body text-start">
+  <h6 class="panel-title"><i class="bi bi-moisture text-success"></i> {{ t('adv.your_inputs') }}</h6>
+  <div class="d-flex flex-wrap gap-2">
+    {% if inp.get('N') is not none and inp.get('N') is defined %}
+      {% for k, u in [('N',''), ('P',''), ('K',''), ('temperature','°C'), ('humidity','%'), ('ph',''), ('rainfall',' mm')] %}
+      <span class="badge text-bg-light border fs-6 fw-normal">{{ t('adv.f_' ~ k) }}: <strong>{{ inp[k] }}{{ u }}</strong></span>{% endfor %}
+      {% set ph = inp['ph'] %}<span class="badge text-bg-success fs-6 fw-normal">{{ t('fert.ph.acidic') if ph < 6.5 else (t('fert.ph.neutral') if ph <= 7.5 else t('fert.ph.alkaline')) }}</span>
+    {% endif %}
+    {% if inp.soil_type %}<span class="badge text-bg-light border fs-6 fw-normal">{{ t('farm.soil') }}: <strong>{{ tn('soil', inp.soil_type) }}</strong></span>{% endif %}
+    {% if inp.season %}<span class="badge text-bg-light border fs-6 fw-normal">{{ t('adv.season') }}: <strong>{{ tn('season', inp.season) }}</strong></span>{% endif %}
+    {% if inp.water %}<span class="badge text-bg-light border fs-6 fw-normal">{{ t('adv.water') }}: <strong>{{ tn('water', inp.water) }}</strong></span>{% endif %}
+    {% if inp.location %}<span class="badge text-bg-light border fs-6 fw-normal"><i class="bi bi-geo-alt"></i> {{ inp.location }}</span>{% endif %}
+  </div></div></div>
+
+<div class="row g-3">
+  {% for tp in result.top %}{% set c = info.get(tp.crop) %}
+  <div class="col-md-6 col-xl-4"><div class="crop-card {{ 'best' if loop.first }} position-relative">
+    <img class="crop-img" src="{{ crop_img(tp.crop) }}" alt="{{ tp.crop }}">
+    {% if loop.first %}<span class="badge text-bg-warning ribbon"><i class="bi bi-award"></i> {{ t('adv.best') }}</span>{% endif %}
+    <div class="p-3">
+      <div class="d-flex justify-content-between align-items-baseline"><h5 class="mb-0">{{ tn('crop', tp.crop) }}</h5><strong class="text-forest">{{ tp.score }}%</strong></div>
+      <div class="progress my-2" style="height:8px"><div class="progress-bar bg-success" style="width: {{ tp.score }}%"></div></div>
+      <div class="small text-muted mb-2">{{ t('adv.score_label') }}{% if tp.water_need %} &middot; {{ t('adv.water_need') }}: {{ tn('water', tp.water_need) }}{% endif %}</div>
+      {% if tp.reasons %}<ul class="mb-2">{% for r in tp.reasons %}
+        <li>{{ t(r[0], season=tn('season', r[1].get('season')), soil=tn('soil', r[1].get('soil')), need=tn('water', r[1].get('need'))) }}</li>{% endfor %}</ul>{% endif %}
+      {% if c %}<dl class="guidance mb-0">
+        {% if c.suitable_conditions %}<dt>{{ t('adv.conditions') }}</dt><dd>{{ c.suitable_conditions }}</dd>{% endif %}
+        {% if c.cultivation_advice %}<dt>{{ t('adv.cultivation') }}</dt><dd>{{ c.cultivation_advice }}</dd>{% endif %}
+        {% if c.irrigation_advice %}<dt>{{ t('adv.irrigation_advice') }}</dt><dd>{{ c.irrigation_advice }}</dd>{% endif %}</dl>
+      {% else %}<p class="small text-muted mb-0">{{ t('adv.no_details') }}</p>{% endif %}
+    </div></div></div>
+  {% endfor %}
+</div>
+<div class="alert alert-light border small mt-3 mb-0"><i class="bi bi-info-circle"></i> {{ t('adv.disclaimer') }}</div>

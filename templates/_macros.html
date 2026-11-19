@@ -1,0 +1,18 @@
+{% macro empty_state(icon, title, text, href=None, label=None) %}
+<div class="empty-state"><i class="bi bi-{{ icon }}"></i><h6>{{ title }}</h6><p>{{ text }}</p>
+  {% if href %}<a class="btn btn-success btn-sm" href="{{ href }}">{{ label }}</a>{% endif %}</div>
+{% endmacro %}
+
+{% macro status_badge(status) %}<span class="badge status-{{ status|lower }}">{{ status|status_label }}</span>{% endmacro %}
+
+{% macro irr_badge(status) %}<span class="badge status-{{ status|replace('_','') }}">{{ t('irr.status.' ~ status) }}</span>{% endmacro %}
+
+{% macro lang_switch(cls='') %}
+<div class="btn-group lang-switch {{ cls }}" role="group" aria-label="Language">
+  {% for code, name in LANGS.items() %}
+  <a class="btn btn-sm btn-outline-light {{ 'active' if code == lang }}" href="{{ url_for('set_language', code=code) }}" lang="{{ code }}">{{ name }}</a>
+  {% endfor %}
+</div>
+{% endmacro %}
+
+{% macro wx_tip(tip) %}<li>{{ t(tip[0], **tip[1]) }}</li>{% endmacro %}

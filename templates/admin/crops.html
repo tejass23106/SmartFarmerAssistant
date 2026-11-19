@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}Manage Crops{% endblock %}
+{% block content %}
+<h3><i class="bi bi-tree text-success"></i> Crops</h3>
+<div class="row g-3 mt-1">
+  <div class="col-lg-5">
+    <div class="card stat-card"><div class="card-body text-start">
+      <h6>{{ 'Edit crop #' ~ form.get('id') if form.get('id') else 'Add new crop' }}</h6>
+      <form method="post" action="{{ url_for('admin_crop_save') }}" novalidate>
+        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+        <input type="hidden" name="id" value="{{ form.get('id', '') }}">
+        <div class="mb-3"><label class="form-label">Crop name *</label>
+          <input name="name" class="form-control" maxlength="60" value="{{ form.get('name', '') }}" required></div>
+        <div class="mb-3"><label class="form-label">Description</label>
+          <textarea name="description" rows="2" class="form-control" maxlength="500">{{ form.get('description', '') }}</textarea></div>
+        <div class="mb-3"><label class="form-label">Suitable conditions</label>
+          <textarea name="suitable_conditions" rows="2" class="form-control" maxlength="500">{{ form.get('suitable_conditions', '') }}</textarea></div>
+        <div class="mb-3"><label class="form-label">General cultivation advice</label>
+          <textarea name="cultivation_advice" rows="3" class="form-control" maxlength="1000">{{ form.get('cultivation_advice', '') }}</textarea></div>
+        <button class="btn btn-success">{{ 'Update' if form.get('id') else 'Add crop' }}</button>
+        {% if form.get('id') %}<a href="{{ url_for('admin_crops') }}" class="btn btn-outline-secondary">Cancel</a>{% endif %}
+      </form>
+    </div></div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="card stat-card"><div class="card-body text-start">
+      <div class="table-responsive"><table class="table align-middle mb-0">
+        <thead><tr><th>#</th><th>Crop</th><th>Diseases</th><th>Conditions</th><th>Actions</th></tr></thead>
+        <tbody>
+        {% for c in rows %}
+          <tr><td>{{ c.id }}</td><td>{{ c.name }}</td>
+            <td><a href="{{ url_for('admin_diseases', crop=c.id) }}">{{ c.disease_count }}</a></td>
+            <td class="small">{{ (c.suitable_conditions or '-')|truncate(60) }}</td>
+            <td class="text-nowrap">
+              <a class="btn btn-sm btn-outline-primary" href="{{ url_for('admin_crops', edit=c.id) }}">Edit</a>
+              <form method="post" action="{{ url_for('admin_crop_delete', crop_id=c.id) }}" class="d-inline"
+                    onsubmit="return confirm('Delete this crop?');">
+                <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+                <button class="btn btn-sm btn-outline-danger">Delete</button>
+              </form></td></tr>
+        {% else %}<tr><td colspan="5" class="text-center text-muted py-4">No crops yet.</td></tr>{% endfor %}
+        </tbody></table></div>
+    </div></div>
+  </div>
+</div>
+{% endblock %}

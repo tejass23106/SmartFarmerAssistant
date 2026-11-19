@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import empty_state with context %}
+{% block title %}{{ t('nav.fertilizer') }} - Smart Farmer{% endblock %}
+{% block content %}
+<div class="page-head"><div><h3><i class="bi bi-basket text-forest"></i> {{ t('nav.fertilizer') }}</h3><p class="sub">{{ t('fert.sub') }}</p></div></div>
+<div class="alert alert-light border small"><i class="bi bi-info-circle"></i> {{ t('fert.units_note') }}</div>
+<div class="row g-3">
+  <div class="col-xl-4"><div class="card stat-card"><div class="card-body text-start">
+    <form method="post" novalidate><input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      {% if farms %}<div class="mb-3"><label class="form-label">{{ t('adv.use_farm') }}</label><select name="farm_id" id="farmSelect" class="form-select"><option value="">-</option>
+        {% for f in farms %}<option value="{{ f.id }}" data-soil="{{ f.soil_type or '' }}" data-crop="{{ f.main_crop or '' }}" {{ 'selected' if form.get('farm_id')|string == f.id|string }}>{{ f.name }}</option>{% endfor %}</select></div>{% endif %}
+      <div class="mb-3"><label class="form-label">{{ t('irr.crop') }} *</label><select name="crop" id="cropSelect" class="form-select" required><option value="">-</option>{% for c in crops %}<option value="{{ c }}" {{ 'selected' if form.get('crop') == c }}>{{ tn('crop', c) }}</option>{% endfor %}</select></div>
+      <div class="mb-3"><label class="form-label">{{ t('farm.soil') }}</label><select name="soil_type" id="soilType" class="form-select"><option value="">{{ t('common.not_sure') }}</option>{% for s in soils %}<option value="{{ s }}" {{ 'selected' if form.get('soil_type') == s }}>{{ tn('soil', s) }}</option>{% endfor %}</select></div>
+      <div class="row g-2 mb-3">{% for k, label in [('N', 'fert.n'), ('P', 'fert.p'), ('K', 'fert.k'), ('ph', 'adv.f_ph')] %}
+        <div class="col-6"><label class="form-label small mb-1">{{ t(label) }} *</label><input type="number" step="any" min="{{ limits[k][0] }}" max="{{ limits[k][1] }}" name="{{ k }}" class="form-control" value="{{ form.get(k, '') }}" required></div>{% endfor %}</div>
+      <button class="btn btn-success w-100"><i class="bi bi-search"></i> {{ t('fert.get') }}</button></form></div></div></div>
+  <div class="col-xl-8">
+    {% if result %}
+    <div class="card result-card mb-3"><div class="card-body"><h5><i class="bi bi-moisture text-success"></i> {{ t('fert.status_title') }} &mdash; {{ tn('crop', result.crop) }}</h5>
+      <div class="row text-center g-2 mb-2">{% for k in ['N', 'P', 'K'] %}{% set lv = result.ratings[k] %}<div class="col-4"><div class="p-2 rounded-3 bg-light"><div class="fw-semibold">{{ t('fert.' ~ k|lower) }}</div><div class="small text-muted">{{ result.inputs[k] }} kg/ha</div>
+        <span class="badge text-bg-{{ {'low':'danger','medium':'warning','high':'success'}[lv] }}">{{ t('fert.level.' ~ lv) }}</span></div></div>{% endfor %}</div>
+      <p class="mb-1"><strong>pH {{ result.inputs.ph }}</strong> &middot; {{ t('fert.ph.' ~ result.ph_class) }}</p>
+      <p class="mb-0">{% if result.deficient %}<i class="bi bi-exclamation-triangle text-warning"></i> {{ t('fert.deficient') }}: <strong>{{ result.deficient|join(', ') }}</strong>{% else %}<i class="bi bi-check-circle text-success"></i> {{ t('fert.no_deficiency') }}{% endif %}</p></div></div>
+    {% if result.fertilizers %}<div class="card stat-card mb-3"><div class="card-body text-start"><h6 class="panel-title"><i class="bi bi-basket text-success"></i> {{ t('fert.suitable') }}</h6>
+      <div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>{{ t('fert.for') }}</th><th>{{ t('fert.type') }}</th><th>{{ t('fert.contains') }}</th></tr></thead><tbody>
+        {% for f in result.fertilizers %}<tr><td><span class="badge text-bg-light border">{{ f.nutrient }}</span></td><td>{{ t('fert.name.' ~ f.name) }}</td><td class="small">{{ f.content }}</td></tr>{% endfor %}</tbody></table></div>
+      <p class="small text-muted mt-2 mb-0"><i class="bi bi-exclamation-circle"></i> {{ t('fert.no_qty') }}</p></div></div>{% endif %}
+    <div class="card stat-card mb-3"><div class="card-body text-start"><h6 class="panel-title"><i class="bi bi-journal-check text-success"></i> {{ t('fert.guidance') }}</h6><ul class="mb-0">
+      {% for n in result.notes %}<li class="mb-1">{{ t(n) }}</li>{% endfor %}<li class="mb-1">{{ t('fert.apply1') }}</li><li class="mb-1">{{ t('fert.apply2') }}</li><li>{{ t('fert.apply3') }}</li></ul></div></div>
+    <div class="card stat-card"><div class="card-body text-start"><h6 class="panel-title"><i class="bi bi-shield-exclamation text-warning"></i> {{ t('fert.precautions') }}</h6><ul class="mb-0">
+      {% for i in range(1, 6) %}<li class="mb-1">{{ t('fert.pre' ~ i) }}</li>{% endfor %}</ul></div></div>
+    {% else %}<div class="card stat-card mb-3"><div class="card-body text-muted py-5"><i class="bi bi-basket" style="font-size:2.4rem;color:#9cc7a2"></i><p class="mt-2 mb-0">{{ t('fert.placeholder') }}</p></div></div>
+    <div class="card stat-card"><div class="card-body text-start"><h6 class="panel-title">{{ t('fert.ratings_title') }}</h6><table class="table table-sm mb-1"><thead><tr><th></th><th>{{ t('fert.level.low') }}</th><th>{{ t('fert.level.medium') }}</th><th>{{ t('fert.level.high') }}</th></tr></thead><tbody>
+      {% for k in ['N', 'P', 'K'] %}<tr><th>{{ k }} (kg/ha)</th><td>&lt; {{ ratings[k][0] }}</td><td>{{ ratings[k][0] }} - {{ ratings[k][1] }}</td><td>&gt; {{ ratings[k][1] }}</td></tr>{% endfor %}</tbody></table>
+      <div class="small text-muted">{{ t('fert.ratings_src') }}</div></div></div>{% endif %}
+  </div></div>
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block title %}{{ t('nav.crop_advisory') }} #{{ rec.id }} - Smart Farmer{% endblock %}
+{% block content %}
+<a href="{{ url_for('history', tab='recommendations') }}" class="btn btn-sm btn-outline-secondary mb-3"><i class="bi bi-arrow-left"></i> {{ t('common.back') }}</a>
+<div class="page-head"><div><h3><i class="bi bi-tree text-forest"></i> {{ t('nav.crop_advisory') }} #{{ rec.id }}</h3><p class="sub">{{ rec.created_at }}</p></div>
+  <form method="post" action="{{ url_for('recommendation_delete', rec_id=rec.id) }}" onsubmit="return confirm('{{ t('common.confirm_delete') }}');">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}"><button class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i> {{ t('common.delete') }}</button></form></div>
+{% include '_reco_result.html' %}
+{% endblock %}

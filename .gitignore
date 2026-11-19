@@ -1,0 +1,37 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Database
+database/*.db
+database/*.sqlite
+database/*.sqlite3
+database/.secret_key
+database/backups/*
+!database/backups/.gitkeep
+
+# Uploaded files
+static/uploads/*
+!static/uploads/.gitkeep
+
+# Training datasets
+dataset/
+datasets_raw/
+datasets_processed/
+
+# Temporary files
+*.bak
+*.tmp
+
+# SQLite databases
+*.db
+*.sqlite
+*.sqlite3

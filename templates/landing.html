@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block title %}Smart Farmer Assistant - {{ t('landing.tagline') }}{% endblock %}
+{% block public %}
+<header class="landing-hero" id="top"><div class="container">
+  {% include '_flash.html' %}
+  <div class="row"><div class="col-lg-7">
+    <p class="tagline mb-2">{{ t('landing.tagline') }}</p>
+    <h1 class="mb-3">Smart Farmer Assistant</h1>
+    <p class="subtitle mb-4">{{ t('landing.subtitle') }}</p>
+    <a href="{{ url_for('register') }}" class="btn btn-sun btn-lg me-2 mb-2">{{ t('landing.get_started') }} <i class="bi bi-arrow-right"></i></a>
+    <a href="#about" class="btn btn-outline-light btn-lg mb-2">{{ t('landing.learn_more') }}</a>
+  </div></div></div></header>
+
+<section class="services-wrap" id="services"><div class="container"><div class="row g-3 g-lg-4">
+  {% for ep, icon, key in [('crop_recommendation','tree','crop_advisory'), ('disease_detection','camera','disease'), ('report_new','clipboard2-pulse','report'), ('weather_page','cloud-sun','weather')] %}
+  <div class="col-sm-6 col-lg-3"><a class="service-card p-4" href="{{ safe_url(ep) }}">
+    <div class="icon"><i class="bi bi-{{ icon }}"></i></div><h5>{{ t('landing.svc.' ~ key) }}</h5><p>{{ t('landing.svc.' ~ key ~ '_d') }}</p>
+    <span class="more">{{ t('landing.open') }} <i class="bi bi-arrow-right-short"></i></span></a></div>
+  {% endfor %}
+</div></div></section>
+
+<section class="section" id="about"><div class="container">
+  <div class="section-title"><div class="eyebrow">{{ t('landing.about_eyebrow') }}</div><h2>{{ t('landing.about_title') }}</h2>
+    <p class="text-muted mx-auto" style="max-width:48rem">{{ t('landing.about_text') }}</p></div>
+  <div class="row g-4">
+    {% for icon, key in [('tree','crop_advisory'), ('camera','disease'), ('droplet','irrigation'), ('basket','fertilizer'), ('graph-up-arrow','market'), ('calendar3','calendar'), ('bank','schemes'), ('chat-dots','chat')] %}
+    <div class="col-sm-6 col-lg-3"><div class="feature-card"><div class="feature-icon"><i class="bi bi-{{ icon }}"></i></div>
+      <h6>{{ t('nav.' ~ key) }}</h6><p>{{ t('landing.feat.' ~ key) }}</p></div></div>
+    {% endfor %}
+  </div></div></section>
+
+<section class="section alt" id="how"><div class="container">
+  <div class="section-title"><div class="eyebrow">{{ t('landing.how_eyebrow') }}</div><h2>{{ t('landing.how_title') }}</h2></div>
+  <div class="row g-4">
+    {% for n, icon in [(1,'person-plus'), (2,'geo-alt'), (3,'stars'), (4,'flag')] %}
+    <div class="col-sm-6 col-lg-3"><div class="how-step"><div class="step-num">{{ n }}</div><i class="bi bi-{{ icon }} fs-3 text-forest"></i>
+      <h6 class="mt-2">{{ t('landing.step' ~ n) }}</h6><p class="text-muted small mb-0">{{ t('landing.step' ~ n ~ '_d') }}</p></div></div>
+    {% endfor %}
+  </div></div></section>
+
+<section class="section"><div class="container"><div class="ai-band">
+  <div class="row g-4 align-items-center">
+    <div class="col-lg-5"><h2>{{ t('landing.ai_title') }}</h2><p class="opacity-90">{{ t('landing.ai_text') }}</p></div>
+    <div class="col-lg-7"><div class="row g-3">
+      {% for icon, key in [('cpu','ai1'), ('chat-dots','ai2'), ('mic','ai3'), ('translate','ai4')] %}
+      <div class="col-sm-6"><div class="ai-chip"><i class="bi bi-{{ icon }} fs-4"></i><h5 class="mt-1 mb-1">{{ t('landing.' ~ key) }}</h5><div class="small opacity-90">{{ t('landing.' ~ key ~ '_d') }}</div></div></div>
+      {% endfor %}
+    </div></div></div></div></div></section>
+
+<section class="section alt"><div class="container">
+  <div class="section-title"><div class="eyebrow">{{ t('landing.benefits_eyebrow') }}</div><h2>{{ t('landing.benefits_title') }}</h2></div>
+  <div class="row g-4">
+    <div class="col-lg-7"><div class="row g-3">
+      {% for icon, key in [('clock-history','b1'), ('shield-check','b2'), ('cash-coin','b3'), ('phone','b4')] %}
+      <div class="col-sm-6"><div class="feature-card"><div class="feature-icon"><i class="bi bi-{{ icon }}"></i></div><h6>{{ t('landing.' ~ key) }}</h6><p>{{ t('landing.' ~ key ~ '_d') }}</p></div></div>
+      {% endfor %}</div></div>
+    <div class="col-lg-5"><div class="row g-3">
+      {% for crop in ['Rice', 'Wheat', 'Maize', 'Tomato'] %}<div class="col-6"><img src="{{ crop_img(crop) }}" alt="{{ tn('crop', crop) }}" class="img-fluid rounded-4 shadow-sm" loading="lazy"></div>{% endfor %}
+    </div></div></div></div></section>
+
+<section class="section" id="contact"><div class="container">
+  <div class="section-title"><div class="eyebrow">{{ t('nav.contact') }}</div><h2>{{ t('landing.contact_title') }}</h2><p class="text-muted">{{ t('landing.contact_text') }}</p></div>
+  <div class="row justify-content-center"><div class="col-lg-7"><div class="panel p-4">
+    <form method="post" action="{{ url_for('contact') }}" novalidate>
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <div class="row"><div class="col-md-6 mb-3"><label class="form-label">{{ t('auth.full_name') }}</label><input name="name" class="form-control" maxlength="80" required></div>
+        <div class="col-md-6 mb-3"><label class="form-label">{{ t('auth.email') }}</label><input type="email" name="email" class="form-control" required></div></div>
+      <div class="mb-3"><label class="form-label">{{ t('landing.message') }}</label><textarea name="message" rows="4" maxlength="1000" class="form-control" required></textarea></div>
+      <button class="btn btn-success"><i class="bi bi-send"></i> {{ t('landing.send') }}</button>
+      {% if contact_email %}<span class="ms-3 small text-muted"><i class="bi bi-envelope"></i> {{ contact_email }}</span>{% endif %}
+    </form></div></div></div></div></section>
+
+<section class="pb-5"><div class="container"><div class="cta-band text-center"><h3 class="mb-2">{{ t('landing.cta_title') }}</h3>
+  <p class="opacity-90 mb-3">{{ t('landing.cta_text') }}</p>
+  <a href="{{ url_for('register') }}" class="btn btn-sun btn-lg me-2">{{ t('nav.register') }}</a><a href="{{ url_for('login') }}" class="btn btn-outline-light btn-lg">{{ t('nav.login') }}</a></div></div></section>
+
+<footer class="public-footer"><div class="container d-flex flex-wrap justify-content-between gap-2">
+  <span><i class="bi bi-flower2"></i> Smart Farmer Assistant &middot; {{ t('landing.footer') }}</span><span>{{ t('common.disclaimer') }}</span></div></footer>
+{% endblock %}

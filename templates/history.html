@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import empty_state, status_badge, irr_badge with context %}
+{% block title %}{{ t('nav.history') }} - Smart Farmer{% endblock %}
+{% block content %}
+<div class="page-head"><div><h3><i class="bi bi-clock-history text-forest"></i> {{ t('nav.history') }}</h3><p class="sub">{{ t('hist.sub') }}</p></div></div>
+<ul class="nav nav-pills mb-3 gap-1 flex-wrap">
+  {% for key, icon in [('recommendations','tree'), ('diagnoses','camera'), ('irrigation','droplet'), ('soil','basket'), ('reports','flag')] %}
+  <li class="nav-item"><a class="nav-link {{ 'active' if tab == key }}" href="{{ url_for('history', tab=key) }}"><i class="bi bi-{{ icon }}"></i> {{ t('hist.' ~ key) }} <span class="badge text-bg-light ms-1">{{ counts[key] }}</span></a></li>{% endfor %}
+</ul>
+<div class="card stat-card"><div class="card-body text-start">
+{% if not rows %}{{ empty_state('inbox', t('hist.empty'), t('hist.empty_d')) }}
+{% elif tab == 'recommendations' %}
+  <div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>{{ t('common.date') }}</th><th>{{ t('adv.best') }}</th><th>%</th><th>{{ t('adv.mode') }}</th><th></th></tr></thead><tbody>
+  {% for r in rows %}<tr><td>{{ r.created_at[:16] }}</td><td><img src="{{ crop_img(r.top_crop) }}" alt="" width="38" height="26" class="rounded me-1" style="object-fit:cover"> <strong>{{ tn('crop', r.top_crop) }}</strong></td><td>{{ r.top_score }}</td><td>{{ t('adv.mode_' ~ r.mode) }}</td>
+    <td><a class="btn btn-sm btn-outline-success" href="{{ url_for('recommendation_detail', rec_id=r.id) }}">{{ t('common.view') }}</a></td></tr>{% endfor %}</tbody></table></div>
+{% elif tab == 'diagnoses' %}
+  <div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>{{ t('common.date') }}</th><th></th><th>{{ t('dis.crop') }}</th><th>{{ t('dis.result') }}</th><th>{{ t('dis.confidence') }}</th><th></th></tr></thead><tbody>
+  {% for r in rows %}<tr><td>{{ r.created_at[:16] }}</td><td><img src="{{ url_for('static', filename='uploads/' ~ r.image_path) }}" alt="" width="46" height="46" class="rounded" style="object-fit:cover"></td><td>{{ tn('crop', r.crop_name) }}</td><td>{{ r.disease_name }}</td><td>{{ '%.1f'|format(r.confidence) }}%</td>
+    <td><a class="btn btn-sm btn-outline-success" href="{{ url_for('disease_result', prediction_id=r.id) }}">{{ t('common.view') }}</a></td></tr>{% endfor %}</tbody></table></div>
+{% elif tab == 'irrigation' %}
+  <div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>{{ t('common.date') }}</th><th>{{ t('irr.crop') }}</th><th>{{ t('irr.moisture') }}</th><th>{{ t('irr.status') }}</th><th>{{ t('irr.source') }}</th></tr></thead><tbody>
+  {% for r in rows %}<tr><td>{{ r.created_at[:16] }}</td><td>{{ tn('crop', r.crop) }}</td><td>{{ r.soil_moisture }}%</td><td>{{ irr_badge(r.status) }}</td><td>{{ t('irr.src_' ~ r.source) }}</td></tr>{% endfor %}</tbody></table></div>
+{% elif tab == 'soil' %}
+  <div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>{{ t('common.date') }}</th><th>{{ t('irr.crop') }}</th><th>N</th><th>P</th><th>K</th><th>pH</th></tr></thead><tbody>
+  {% for r in rows %}<tr><td>{{ r.created_at[:16] }}</td><td>{{ tn('crop', r.crop) }}</td><td>{{ r.nitrogen }}</td><td>{{ r.phosphorus }}</td><td>{{ r.potassium }}</td><td>{{ r.ph }}</td></tr>{% endfor %}</tbody></table></div>
+{% else %}
+  <div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>#</th><th>{{ t('common.date') }}</th><th>{{ t('dis.crop') }}</th><th>{{ t('dis.result') }}</th><th>{{ t('common.status') }}</th><th></th></tr></thead><tbody>
+  {% for r in rows %}<tr><td>{{ r.id }}</td><td>{{ r.report_date }}</td><td>{{ tn('crop', r.crop_name) }}</td><td>{{ r.disease_name }}</td><td>{{ status_badge(r.status) }}</td>
+    <td><a class="btn btn-sm btn-outline-success" href="{{ url_for('report_detail', report_id=r.id) }}">{{ t('common.view') }}</a></td></tr>{% endfor %}</tbody></table></div>
+{% endif %}
+</div></div>
+{% endblock %}

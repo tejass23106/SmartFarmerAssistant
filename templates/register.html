@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}{{ t('auth.register') }} - Smart Farmer Assistant{% endblock %}
+{% block auth %}
+<div class="auth-shell card shadow-lg"><div class="row g-0">
+  <div class="col-md-4 auth-hero d-none d-md-flex"><div><i class="bi bi-person-plus display-4"></i><h4 class="mt-2">{{ t('auth.join') }}</h4>
+    <p class="opacity-90 mb-0">{{ t('auth.join_blurb') }}</p></div></div>
+  <div class="col-md-8"><div class="p-4 p-md-5">
+    <h4 class="mb-1">{{ t('auth.farmer_reg') }}</h4><p class="text-muted mb-4">{{ t('auth.required_note') }}</p>
+    <form method="post" novalidate>
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <div class="row">
+        <div class="col-md-6 mb-3"><label class="form-label" for="full_name">{{ t('auth.full_name') }} *</label>
+          <input id="full_name" name="full_name" class="form-control" maxlength="80" value="{{ form.get('full_name','') }}" required autofocus></div>
+        <div class="col-md-6 mb-3"><label class="form-label" for="reg_email">{{ t('auth.email') }} *</label>
+          <input type="email" id="reg_email" name="email" class="form-control" value="{{ form.get('email','') }}" required></div></div>
+      <div class="row">
+        <div class="col-md-6 mb-3"><label class="form-label" for="phone">{{ t('auth.phone') }}</label>
+          <input id="phone" name="phone" class="form-control" value="{{ form.get('phone','') }}"></div>
+        <div class="col-md-6 mb-3"><label class="form-label" for="location">{{ t('auth.location') }}</label>
+          <input id="location" name="location" class="form-control" value="{{ form.get('location','') }}"></div></div>
+      <div class="row">
+        <div class="col-md-6 mb-3"><label class="form-label" for="pw1">{{ t('auth.password') }} * (min 8)</label>
+          <div class="input-group"><input type="password" id="pw1" name="password" class="form-control" autocomplete="new-password" required>
+            <button type="button" class="btn btn-outline-secondary" data-toggle-password="#pw1" aria-label="Show or hide password"><i class="bi bi-eye"></i></button></div></div>
+        <div class="col-md-6 mb-3"><label class="form-label" for="pw2">{{ t('auth.confirm_password') }} *</label>
+          <div class="input-group"><input type="password" id="pw2" name="confirm_password" class="form-control" autocomplete="new-password" required>
+            <button type="button" class="btn btn-outline-secondary" data-toggle-password="#pw2" aria-label="Show or hide password"><i class="bi bi-eye"></i></button></div></div></div>
+      <button class="btn btn-success w-100 py-2">{{ t('auth.create_account') }}</button>
+    </form>
+    <p class="text-center mt-4 mb-0 small">{{ t('auth.have_account') }} <a href="{{ url_for('login') }}">{{ t('auth.login') }}</a></p>
+  </div></div></div></div>
+{% endblock %}

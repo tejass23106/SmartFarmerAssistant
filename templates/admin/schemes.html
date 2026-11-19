@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}{{ t('adm.schemes') }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h3><i class="bi bi-bank text-forest"></i> {{ t('adm.schemes') }}</h3><p class="sub">{{ t('scheme.admin_sub') }}</p></div></div>
+<div class="row g-3">
+  <div class="col-xl-5"><div class="card stat-card"><div class="card-body text-start">
+    <h6 class="panel-title">{{ t('scheme.edit') if form.get('id') else t('scheme.add') }}</h6>
+    <form method="post" action="{{ url_for('admin_scheme_save') }}" novalidate><input type="hidden" name="_csrf" value="{{ csrf_token }}"><input type="hidden" name="id" value="{{ form.get('id', '') }}">
+      <div class="mb-2"><label class="form-label small mb-1">{{ t('scheme.name') }} *</label><input name="name" class="form-control form-control-sm" maxlength="120" value="{{ form.get('name', '') }}" required></div>
+      <div class="mb-2"><label class="form-label small mb-1">{{ t('scheme.category') }}</label><input name="category" class="form-control form-control-sm" maxlength="60" value="{{ form.get('category') or '' }}"></div>
+      <div class="mb-2"><label class="form-label small mb-1">{{ t('scheme.desc') }} *</label><textarea name="description" rows="2" class="form-control form-control-sm" maxlength="800" required>{{ form.get('description') or '' }}</textarea></div>
+      <div class="mb-2"><label class="form-label small mb-1">{{ t('scheme.eligibility') }}</label><textarea name="eligibility" rows="2" class="form-control form-control-sm" maxlength="800">{{ form.get('eligibility') or '' }}</textarea></div>
+      <div class="mb-2"><label class="form-label small mb-1">{{ t('scheme.benefits') }}</label><textarea name="benefits" rows="2" class="form-control form-control-sm" maxlength="800">{{ form.get('benefits') or '' }}</textarea></div>
+      <div class="mb-2"><label class="form-label small mb-1">{{ t('scheme.documents') }}</label><textarea name="documents" rows="2" class="form-control form-control-sm" maxlength="800">{{ form.get('documents') or '' }}</textarea></div>
+      <div class="mb-2"><label class="form-label small mb-1">{{ t('scheme.process') }}</label><textarea name="process" rows="3" class="form-control form-control-sm" maxlength="1200">{{ form.get('process') or '' }}</textarea></div>
+      <div class="mb-2"><label class="form-label small mb-1">{{ t('scheme.official_url') }} (https)</label><input name="official_url" class="form-control form-control-sm" maxlength="200" value="{{ form.get('official_url') or '' }}"></div>
+      <div class="row g-2 mb-2"><div class="col-md-6"><label class="form-label small mb-1">{{ t('scheme.source') }}</label><input name="source_name" class="form-control form-control-sm" maxlength="160" value="{{ form.get('source_name') or '' }}"></div>
+        <div class="col-md-6"><label class="form-label small mb-1">{{ t('scheme.source_url') }} (https)</label><input name="source_url" class="form-control form-control-sm" maxlength="200" value="{{ form.get('source_url') or '' }}"></div></div>
+      <div class="mb-3"><label class="form-label small mb-1">{{ t('scheme.last_verified') }}</label><input type="date" name="last_verified" class="form-control form-control-sm" value="{{ form.get('last_verified') or '' }}"></div>
+      <button class="btn btn-success btn-sm">{{ t('common.save') }}</button>{% if form.get('id') %} <a href="{{ url_for('admin_schemes') }}" class="btn btn-sm btn-outline-secondary">{{ t('common.cancel') }}</a>{% endif %}
+    </form></div></div></div>
+  <div class="col-xl-7"><div class="card stat-card"><div class="card-body text-start"><div class="table-responsive"><table class="table align-middle mb-0">
+    <thead><tr><th>{{ t('scheme.name') }}</th><th>{{ t('scheme.verified') }}</th><th>{{ t('common.status') }}</th><th></th></tr></thead><tbody>
+    {% for s in rows %}<tr><td>{{ s.name }}</td><td class="small">{{ s.last_verified or '-' }}</td>
+      <td><span class="badge {{ 'text-bg-success' if s.is_active else 'text-bg-secondary' }}">{{ t('scheme.active') if s.is_active else t('scheme.inactive') }}</span></td>
+      <td class="text-nowrap"><a class="btn btn-sm btn-outline-success" href="{{ url_for('admin_schemes', edit=s.id) }}">{{ t('common.edit') }}</a>
+        <form method="post" action="{{ url_for('admin_scheme_toggle', sid=s.id) }}" class="d-inline"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><button class="btn btn-sm btn-outline-warning">{{ t('scheme.toggle') }}</button></form>
+        <form method="post" action="{{ url_for('admin_scheme_delete', sid=s.id) }}" class="d-inline" onsubmit="return confirm('{{ t('common.confirm_delete') }}');"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><button class="btn btn-sm btn-outline-danger">{{ t('common.delete') }}</button></form></td></tr>
+    {% else %}<tr><td colspan="4" class="text-center text-muted py-3">{{ t('scheme.none') }}</td></tr>{% endfor %}</tbody></table></div></div></div></div>
+</div>
+{% endblock %}

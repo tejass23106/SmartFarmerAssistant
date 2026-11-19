@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import empty_state with context %}
+{% block title %}{{ t('nav.weather') }} - Smart Farmer{% endblock %}
+{% block content %}
+<div class="page-head"><div><h3><i class="bi bi-cloud-sun text-forest"></i> {{ t('nav.weather') }}</h3><p class="sub">{{ t('wx.sub') }}</p></div></div>
+<form class="row g-2 mb-2" method="get"><div class="col-md-6 col-lg-5"><div class="input-group"><span class="input-group-text"><i class="bi bi-search"></i></span>
+  <input name="q" value="{{ q }}" class="form-control" maxlength="80" placeholder="{{ t('wx.search_ph') }}" required></div></div>
+  <div class="col-auto"><button class="btn btn-success">{{ t('wx.check') }}</button></div></form>
+{% if farms %}<div class="mb-3 small"><span class="text-muted">{{ t('wx.my_farms') }}:</span>
+  {% for f in farms %}<a class="badge text-bg-light border text-decoration-none" href="{{ url_for('weather_page', q=f.location) }}"><i class="bi bi-geo-alt"></i> {{ f.name }}</a> {% endfor %}</div>{% endif %}
+
+{% if error %}<div class="alert alert-warning"><i class="bi bi-exclamation-triangle"></i> {{ t(error) }}</div>{% endif %}
+{% if places|length > 1 %}<div class="mb-3 small"><span class="text-muted">{{ t('wx.did_you_mean') }}</span>
+  {% for p in places[1:] %}<a class="badge text-bg-light border text-decoration-none" href="{{ url_for('weather_page', lat=p.lat, lon=p.lon, name=p.name ~ (', ' ~ p.state if p.state else '')) }}">{{ p.name }}{% if p.state %}, {{ p.state }}{% endif %}</a> {% endfor %}</div>{% endif %}
+
+{% if data %}{% set c = data.current %}
+<div class="row g-3 mb-3">
+  <div class="col-lg-5"><div class="weather-mini h-100">
+    <div class="d-flex justify-content-between align-items-center"><div><div class="small opacity-90"><i class="bi bi-geo-alt"></i> {{ place.name }}</div>
+      <div class="temp">{{ c.temp|round(1) }}&deg;C</div><div>{{ c.description }} &middot; {{ t('wx.feels') }} {{ c.feels_like|round|int }}&deg;C</div></div><i class="bi bi-{{ c.icon }}" style="font-size:3.4rem"></i></div>
+    <div class="row text-center mt-3 small"><div class="col-4"><i class="bi bi-droplet"></i><div>{{ c.humidity }}%</div><div class="opacity-75">{{ t('wx.humidity') }}</div></div>
+      <div class="col-4"><i class="bi bi-wind"></i><div>{{ c.wind|round|int }} km/h</div><div class="opacity-75">{{ t('wx.wind') }}</div></div>
+      <div class="col-4"><i class="bi bi-cloud-rain"></i><div>{{ c.rain }} mm</div><div class="opacity-75">{{ t('wx.rain_now') }}</div></div></div>
+    <form method="post" action="{{ url_for('weather_save') }}" class="mt-3"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><input type="hidden" name="lat" value="{{ place.lat }}"><input type="hidden" name="lon" value="{{ place.lon }}"><input type="hidden" name="name" value="{{ place.name }}">
+      {% if saved and saved.name == place.name %}<span class="small"><i class="bi bi-check-circle"></i> {{ t('wx.is_saved') }}</span>{% else %}<button class="btn btn-sm btn-light"><i class="bi bi-pin-map"></i> {{ t('wx.save_location') }}</button>{% endif %}</form></div></div>
+  <div class="col-lg-7"><div class="card stat-card h-100"><div class="card-body text-start"><h6 class="panel-title"><i class="bi bi-lightbulb text-success"></i> {{ t('wx.advisory') }}</h6>
+    <ul class="mb-2">{% for tip in data.tips %}<li class="mb-1">{{ t(tip[0], **tip[1]) }}</li>{% endfor %}</ul>
+    <p class="small text-muted mb-0">{{ t('wx.advisory_note') }}</p></div></div></div>
+</div>
+<h6 class="mb-2">{{ t('wx.forecast7') }}</h6>
+<div class="row g-2 row-cols-2 row-cols-md-4 row-cols-xl-7">
+  {% for dday in data.daily %}<div class="col"><div class="wx-day"><div class="small text-muted">{{ dday.date[5:] }}</div><i class="bi bi-{{ dday.icon }}"></i>
+    <div class="fw-semibold">{{ dday.max|round|int }}&deg; / {{ dday.min|round|int }}&deg;</div><div class="small text-muted">{{ dday.description }}</div>
+    <div class="small"><i class="bi bi-droplet"></i> {{ dday.rain }} mm{% if dday.rain_prob is not none %} &middot; {{ dday.rain_prob }}%{% endif %}</div></div></div>{% endfor %}</div>
+<div class="small text-muted mt-3"><i class="bi bi-info-circle"></i> {{ t('wx.source') }}: Open-Meteo (open-meteo.com)</div>
+{% elif not error %}<div class="card stat-card"><div class="card-body">{{ empty_state('geo-alt', t('wx.choose'), t('wx.choose_d')) }}</div></div>{% endif %}
+{% endblock %}

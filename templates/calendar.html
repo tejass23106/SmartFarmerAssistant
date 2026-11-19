@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import empty_state with context %}
+{% block title %}{{ t('nav.calendar') }} - Smart Farmer{% endblock %}
+{% block content %}
+<div class="page-head"><div><h3><i class="bi bi-calendar3 text-forest"></i> {{ t('nav.calendar') }}</h3><p class="sub">{{ t('cal.sub') }}</p></div></div>
+<div class="alert alert-light border small"><i class="bi bi-info-circle"></i> {{ t('cal.estimate_note') }}</div>
+<div class="row g-3">
+  <div class="col-xl-8"><div class="card stat-card"><div class="card-body text-start">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <a class="btn btn-sm btn-outline-success" href="{{ url_for('calendar_page', y=prev[0], m=prev[1]) }}"><i class="bi bi-chevron-left"></i></a>
+      <strong>{{ y }} / {{ '%02d'|format(m) }}</strong>
+      <a class="btn btn-sm btn-outline-success" href="{{ url_for('calendar_page', y=next[0], m=next[1]) }}"><i class="bi bi-chevron-right"></i></a></div>
+    <div class="cal-grid mb-1">{% for d in ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] %}<div class="cal-head">{{ t('cal.wd.' ~ d) }}</div>{% endfor %}</div>
+    <div class="cal-grid">{% for week in weeks %}{% for day in week %}
+      {% set iso = day.isoformat() %}
+      <div class="cal-cell {{ 'other' if day.month != m }} {{ 'today' if iso == today }}"><div class="small fw-semibold">{{ day.day }}</div>
+        {% for a in by_day.get(iso, []) %}<span class="cal-chip cal-{{ a.kind }} {{ 'cal-done' if a.completed }}" title="{{ a.title }}">{{ a.title }}</span>{% endfor %}</div>
+    {% endfor %}{% endfor %}</div>
+    <div class="d-flex flex-wrap gap-2 mt-3 small">{% for k in kinds %}<span class="cal-chip cal-{{ k }} px-2 py-1">{{ t('cal.k.' ~ k) }}</span>{% endfor %}</div>
+  </div></div></div>
+
+  <div class="col-xl-4"><div class="card stat-card mb-3"><div class="card-body text-start"><h6 class="panel-title"><i class="bi bi-flower1 text-success"></i> {{ t('cal.plan') }}</h6>
+    <form method="post" action="{{ url_for('calendar_plan_create') }}"><input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <div class="mb-2"><label class="form-label small mb-1">{{ t('cal.crop') }} *</label><select name="crop" class="form-select form-select-sm" required><option value="">-</option>{% for c in crops %}<option value="{{ c }}">{{ tn('crop', c) }}</option>{% endfor %}</select></div>
+      <div class="mb-2"><label class="form-label small mb-1">{{ t('cal.sowing') }} *</label><input type="date" name="sowing_date" class="form-control form-control-sm" required></div>
+      {% if farms %}<div class="mb-2"><label class="form-label small mb-1">{{ t('cal.farm') }}</label><select name="farm_id" class="form-select form-select-sm"><option value="">-</option>{% for f in farms %}<option value="{{ f.id }}">{{ f.name }}</option>{% endfor %}</select></div>{% endif %}
+      <div class="mb-2"><input name="notes" class="form-control form-control-sm" maxlength="300" placeholder="{{ t('cal.notes_ph') }}"></div>
+      <button class="btn btn-success btn-sm w-100">{{ t('cal.create') }}</button></form>
+    {% if plans %}<hr><ul class="mini-list">{% for p in plans %}<li class="d-flex justify-content-between align-items-center"><span>{{ tn('crop', p.crop) }} <span class="text-muted small">{{ p.sowing_date }}</span></span>
+      <form method="post" action="{{ url_for('calendar_plan_delete', plan_id=p.id) }}" onsubmit="return confirm('{{ t('cal.confirm_plan') }}');"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><button class="btn btn-sm btn-link text-danger p-0"><i class="bi bi-trash"></i></button></form></li>{% endfor %}</ul>{% endif %}
+  </div></div>
+
+  <div class="card stat-card mb-3"><div class="card-body text-start"><h6 class="panel-title"><i class="bi bi-plus-circle text-success"></i> {{ t('cal.add_custom') }}</h6>
+    <form method="post" action="{{ url_for('calendar_activity_create') }}"><input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <input name="title" class="form-control form-control-sm mb-2" maxlength="120" placeholder="{{ t('cal.title') }}" required>
+      <div class="row g-2 mb-2"><div class="col-6"><input type="date" name="start_date" class="form-control form-control-sm" required></div>
+        <div class="col-6"><select name="kind" class="form-select form-select-sm">{% for k in kinds %}<option value="{{ k }}">{{ t('cal.k.' ~ k) }}</option>{% endfor %}</select></div></div>
+      <input name="description" class="form-control form-control-sm mb-2" maxlength="300" placeholder="{{ t('cal.desc') }}">
+      <button class="btn btn-outline-success btn-sm w-100">{{ t('common.save') }}</button></form></div></div></div>
+</div>
+
+<div class="card stat-card mt-3"><div class="card-body text-start"><h6 class="panel-title"><i class="bi bi-bell text-success"></i> {{ t('cal.upcoming') }}</h6>
+  {% if upcoming %}<ul class="list-unstyled mb-0">{% for a in upcoming %}
+    <li class="d-flex flex-wrap align-items-center gap-2 py-2 border-bottom">
+      <span class="cal-chip cal-{{ a.kind }} px-2" style="min-width:5.5rem;text-align:center">{{ a.start_date }}</span>
+      <div class="flex-grow-1 {{ 'text-decoration-line-through text-muted' if a.completed }}"><strong>{{ a.title }}</strong>
+        {% if a.description %}<div class="small text-muted">{{ a.description }}</div>{% endif %}</div>
+      <span class="badge {{ 'text-bg-warning' if a.is_estimate else 'text-bg-light border' }}">{{ t('cal.est') if a.is_estimate else t('cal.fixed') }}</span>
+      <form method="post" action="{{ url_for('calendar_activity_toggle', act_id=a.id) }}"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><button class="btn btn-sm btn-outline-success">{{ t('cal.done') if not a.completed else t('cal.undo') }}</button></form>
+      <details class="small"><summary class="btn btn-sm btn-outline-secondary">{{ t('common.edit') }}</summary>
+        <form method="post" action="{{ url_for('calendar_activity_edit', act_id=a.id) }}" class="mt-2"><input type="hidden" name="_csrf" value="{{ csrf_token }}">
+          <input name="title" value="{{ a.title }}" maxlength="120" class="form-control form-control-sm mb-1" required>
+          <input type="date" name="start_date" value="{{ a.start_date }}" class="form-control form-control-sm mb-1" required>
+          <input name="description" value="{{ a.description or '' }}" maxlength="300" class="form-control form-control-sm mb-1">
+          <button class="btn btn-sm btn-success">{{ t('common.save') }}</button></form></details>
+      <form method="post" action="{{ url_for('calendar_activity_delete', act_id=a.id) }}" onsubmit="return confirm('{{ t('common.confirm_delete') }}');"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button></form>
+    </li>{% endfor %}</ul>
+  {% else %}{{ empty_state('calendar3', t('cal.none'), t('cal.none_d')) }}{% endif %}
+</div></div>
+{% endblock %}

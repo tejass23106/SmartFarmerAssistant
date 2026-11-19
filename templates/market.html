@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import empty_state with context %}
+{% block title %}{{ t('nav.market') }} - Smart Farmer{% endblock %}
+{% block content %}
+<div class="page-head"><div><h3><i class="bi bi-graph-up-arrow text-forest"></i> {{ t('nav.market') }}</h3><p class="sub">{{ t('mkt.sub') }}</p></div></div>
+{% if not configured %}<div class="alert alert-warning"><i class="bi bi-key"></i> {{ t('mkt.not_configured') }} <code>MARKET_API_KEY</code>.</div>{% endif %}
+<form class="row g-2 mb-3" method="get">
+  <div class="col-md-3"><label class="form-label small mb-1">{{ t('mkt.state') }} *</label>
+    <select name="state" class="form-select" required><option value="">-</option>{% for s in states %}<option value="{{ s }}" {{ 'selected' if s == state }}>{{ s }}</option>{% endfor %}</select></div>
+  <div class="col-md-3"><label class="form-label small mb-1">{{ t('mkt.commodity') }} *</label>
+    <input name="commodity" class="form-control" list="commodityList" value="{{ commodity }}" maxlength="40" required placeholder="{{ t('mkt.commodity_ph') }}">
+    <datalist id="commodityList">{% for c in commodities %}<option value="{{ c }}">{% endfor %}</datalist></div>
+  <div class="col-md-3"><label class="form-label small mb-1">{{ t('mkt.district') }}</label>
+    <input name="district" class="form-control" value="{{ district }}" maxlength="40" placeholder="{{ t('mkt.district_ph') }}"></div>
+  <div class="col-md-3 d-flex align-items-end gap-1"><button class="btn btn-success flex-fill"><i class="bi bi-search"></i> {{ t('common.search') }}</button>
+    <a href="{{ url_for('market_page') }}" class="btn btn-outline-secondary">{{ t('common.reset') }}</a></div>
+</form>
+
+{% if error %}<div class="alert alert-warning"><i class="bi bi-exclamation-triangle"></i> {{ t(error) }}</div>{% endif %}
+{% if source == 'stored' %}<div class="alert alert-light border small"><i class="bi bi-clock-history"></i> {{ t('mkt.stored_notice') }} {{ updated }}</div>{% endif %}
+
+{% if rows %}
+<div class="card stat-card mb-3"><div class="card-body text-start">
+  <div class="d-flex flex-wrap justify-content-between gap-2 mb-2"><div>
+    <span class="badge {{ 'text-bg-success' if source == 'live' else 'text-bg-secondary' }}">{{ t('mkt.live') if source == 'live' else t('mkt.stored_label') }}</span>
+    <span class="small text-muted ms-2">{{ t('mkt.unit') }}</span></div>
+    <div class="small text-muted">{{ t('mkt.updated') }}: <strong>{{ updated }}</strong></div></div>
+  <div class="table-responsive"><table class="table table-sm align-middle price-table mb-0"><thead><tr><th>{{ t('mkt.market') }}</th><th>{{ t('mkt.district') }}</th><th>{{ t('mkt.variety') }}</th><th>{{ t('mkt.date') }}</th><th>{{ t('mkt.min') }}</th><th>{{ t('mkt.max') }}</th><th>{{ t('mkt.modal') }}</th></tr></thead><tbody>
+    {% for r in rows %}<tr><td>{{ r.market }}</td><td>{{ r.district }}</td><td>{{ r.variety or '-' }}</td><td>{{ r.arrival_date }}</td><td>&#8377;{{ '%g'|format(r.min) }}</td><td>&#8377;{{ '%g'|format(r.max) }}</td><td><strong>&#8377;{{ '%g'|format(r.modal) }}</strong></td></tr>{% endfor %}</tbody></table></div>
+  <div class="small text-muted mt-2"><i class="bi bi-info-circle"></i> {{ t('mkt.source') }}: data.gov.in - {{ t('mkt.dataset') }}</div>
+</div></div>
+<div class="row g-3">
+  <div class="col-lg-6"><div class="card stat-card h-100"><div class="card-body text-start"><h6 class="panel-title">{{ t('mkt.compare') }}</h6>
+    {% if comp %}<div class="chart-box"><canvas id="compChart"></canvas></div>{% else %}<p class="text-muted small mb-0">{{ t('mkt.no_compare') }}</p>{% endif %}</div></div></div>
+  <div class="col-lg-6"><div class="card stat-card h-100"><div class="card-body text-start"><h6 class="panel-title">{{ t('mkt.trend') }}</h6>
+    {% if trend|length > 1 %}<div class="chart-box"><canvas id="trendChart"></canvas></div>{% else %}<p class="text-muted small mb-0">{{ t('mkt.no_trend') }}</p>{% endif %}</div></div></div>
+</div>
+{% elif searched %}
+  {{ empty_state('graph-up-arrow', t('mkt.no_data'), t('mkt.no_data_d')) }}
+{% else %}
+  <div class="card stat-card"><div class="card-body">{{ empty_state('graph-up-arrow', t('mkt.choose'), t('mkt.choose_d')) }}</div></div>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+{% if rows %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+  {% if comp %}new Chart(document.getElementById('compChart'), {type: 'bar', data: {labels: {{ comp|map('first')|list|tojson }}, datasets: [{label: '{{ t("mkt.modal") }}', data: {{ comp|map('last')|list|tojson }}, backgroundColor: '#3f9d4e', borderRadius: 6}]}, options: {maintainAspectRatio: false, plugins: {legend: {display: false}}, scales: {y: {beginAtZero: true}}}});{% endif %}
+  {% if trend|length > 1 %}new Chart(document.getElementById('trendChart'), {type: 'line', data: {labels: {{ trend|map(attribute='d')|list|tojson }}, datasets: [{label: '{{ t("mkt.modal") }}', data: {{ trend|map(attribute='p')|list|tojson }}, borderColor: '#1b6b3e', backgroundColor: 'rgba(63,157,78,.18)', fill: true, tension: .3}]}, options: {maintainAspectRatio: false, plugins: {legend: {display: false}}}});{% endif %}
+</script>
+{% endif %}
+{% endblock %}
