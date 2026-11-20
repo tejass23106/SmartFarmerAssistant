@@ -1,162 +1,230 @@
-# Smart Farmer Assistant
+# 🌱 Smart Farmer Assistant
 
-An AI-powered agriculture and decision-support web application for Indian farmers, built with **Flask, SQLite,
-TensorFlow/Keras and Bootstrap**. Engineering mini project.
+An AI-powered agriculture assistance platform designed to help farmers make smarter farming decisions through crop recommendations, plant disease detection, weather insights, market prices and intelligent farming tools.
 
-## What it does
+![Python](https://img.shields.io/badge/Python-3.12-blue?logo=python&logoColor=white)
+![Flask](https://img.shields.io/badge/Flask-3.0-black?logo=flask)
+![Database](https://img.shields.io/badge/Database-Turso-blue)
+![Deployment](https://img.shields.io/badge/Deployment-Vercel-black?logo=vercel)
+![Status](https://img.shields.io/badge/Status-Active-brightgreen)
 
-| Farmer | Administrator |
+---
+
+## 🚀 Live Demo
+
+**Live Application:** https://smart-farmer-assistant-sigma.vercel.app/   
+
+## ✨ Features
+
+### 🌾 Farmer Features
+
+- **Crop Recommendation** – Get crop suggestions using soil-test values or quick farming inputs.
+- **Plant Disease Detection** – Analyze plant images using the Plant.id API.
+- **Weather Information** – View current weather conditions and forecasts.
+- **Smart Irrigation** – Get irrigation recommendations and water-management guidance.
+- **Fertilizer Recommendations** – Receive fertilizer guidance based on soil nutrient information.
+- **Market Prices** – Explore agricultural market prices using the data.gov.in API.
+- **AI Farming Assistant** – Get AI-powered farming assistance using Google Gemini.
+- **Farming Calendar** – Organize crop activities, stages and reminders.
+- **Government Schemes** – Explore agricultural schemes and eligibility information.
+- **Disease Reports** – Submit and track plant disease reports.
+- **Farm Management** – Maintain farm details and farming history.
+- **Notifications** – Receive updates about farming activities and reports.
+
+### 🛠️ Administrator Features
+
+- Admin dashboard with application statistics.
+- Farmer account management.
+- Disease report management.
+- Crop and disease information management.
+- Farming advisory management.
+- Government scheme management.
+- PDF and Excel report exports.
+
+### 🌐 Additional Features
+
+- English, Kannada and Hindi language support.
+- Responsive web interface.
+- User authentication and role-based access.
+- Sensor integration support for ESP32 and Arduino.
+- Secure API key handling through environment variables.
+
+---
+
+## 🧰 Tech Stack
+
+| Category | Technologies |
 |---|---|
-| Crop advisory: soil type, season and water (quick), or soil-test values N, P, K, temperature, humidity, pH, rainfall | Dashboard with totals, monthly registrations, detections and recommendations, reports by crop, location and status (interactive charts) |
-| Leaf disease diagnosis from a photo, or from the camera, with confidence, symptoms, causes, prevention and general treatment | Manage farmers (activate, deactivate, delete) |
-| Disease reports with status (Pending, Under Review, Resolved) and notifications when the status changes | Review, update and delete disease reports |
-| Smart irrigation: Irrigation Required / Not Required / Monitor Soil Moisture, with timing and water-management tips | Manage crops, diseases and advisories |
-| Fertilizer advice: nutrient status (Soil Health Card bands), suitable fertilizer types, application guidance and precautions | Manage government schemes and read contact messages |
-| Weather: search any town, current conditions, 7-day forecast, farming advisory | Export a PDF summary and an Excel workbook |
-| Market prices from data.gov.in (state, crop, district), with comparison and trend charts | |
-| Farming calendar: crop plan with estimated stages, irrigation and fertilizer reminders, custom activities | |
-| Government schemes with eligibility, benefits, documents, process, official link and verification date | |
-| AI chatbot in English, Kannada and Hindi, with saved conversations; voice input and read-aloud where the browser supports it | |
-| Farm details, history of everything, notifications, activity feed, sensor devices (ESP32 / Arduino) | |
+| Frontend | HTML5, CSS3, Bootstrap 5, JavaScript |
+| Backend | Python, Flask |
+| Database | Turso, SQLite |
+| AI Integration | Google Gemini API |
+| Plant Analysis | Plant.id API |
+| Weather | Open-Meteo API |
+| Market Data | data.gov.in API |
+| PDF Export | ReportLab |
+| Excel Export | OpenPyXL |
+| Deployment | Vercel |
+| Version Control | Git, GitHub |
 
-## Technology
+---
 
-| Layer | Used |
-|---|---|
-| Frontend | HTML5, CSS3, Bootstrap 5, JavaScript, Chart.js, Web Speech API |
-| Backend | Python 3.9–3.12, Flask |
-| Database | SQLite with versioned, additive migrations (`utils/migrations.py`) |
-| AI / ML | TensorFlow/Keras (MobileNetV2 transfer learning), OpenCV, NumPy, Pandas, scikit-learn |
-| External data | Open-Meteo (weather, no key), data.gov.in (market prices, key), Anthropic API (chatbot, key) |
+## ⚙️ Local Installation
 
-## Project layout
-
-```
-app.py                      Main Flask app: landing, auth, dashboards, advisory, detection, admin users
-security.py                 Secret key, .env loader, cookies, security headers, login throttling
-public_routes.py            Language switch, contact form
-farm_routes.py              Farm details            history_routes.py   History and recommendation details
-weather_routes.py           Weather                 irrigation_routes.py  Irrigation + sensor devices API
-fertilizer_routes.py        Fertilizer advice      market_routes.py    Market prices (data.gov.in)
-calendar_routes.py          Farming calendar       chat_routes.py      AI chatbot
-scheme_routes.py            Schemes, messages      export_routes.py    PDF and Excel exports
-report_routes.py            Disease reports        advisory_routes.py  Advisory articles
-admin_routes.py             Crops and diseases     notification_routes.py  Notifications
-model/                      advisory_engine, crop_recommend (+ training), disease_predict (+ training),
-                            irrigation_engine, fertilizer_engine
-utils/                      database, migrations, i18n, weather, http, chatbot, analytics, dashboard, activity
-i18n/                       en.json, kn.json, hi.json (generated from tools/tr_*.py)
-templates/                  Jinja2 pages (+ admin/)     static/css, static/js (script.js, chat.js, voice.js)
-static/img/                 Generated hero and crop illustrations (tools/make_images.py)
-tests/                      test_app.py (core, 29 tests), test_v2.py (new features, 37 tests)
-tools/                      build_translations.py, check_i18n.py, make_images.py, tr_*.py
-docs/esp32_soil_sensor.ino  Example sensor sketch (not hardware-tested by the project)
-```
-
-## Setup
-
-Requires Python **3.9 to 3.12** (TensorFlow does not support newer versions yet).
+### 1. Clone the repository
 
 ```bash
-python -m venv venv
-venv\Scripts\activate              # Windows
-source venv/bin/activate           # Linux / macOS
-pip install -r requirements.txt
+git clone https://github.com/tejass23106/SmartFarmerAssistant.git
+cd SmartFarmerAssistant
+```
+
+### 2. Create a virtual environment
+
+```bash
+python -m venv .venv
+```
+
+Activate it on Windows:
+
+```powershell
+.venv\Scripts\activate
+```
+
+### 3. Install dependencies
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+### 4. Configure environment variables
+
+Create a `.env` file in the project root.
+
+Add the following variables:
+
+```env
+SECRET_KEY=your_secret_key
+
+ADMIN_EMAIL=your_admin_email
+ADMIN_PASSWORD=your_admin_password
+
+GEMINI_API_KEY=your_gemini_api_key
+PLANT_HEALTH_API_KEY=your_plant_health_api_key
+MARKET_API_KEY=your_market_api_key
+
+TURSO_DATABASE_URL=your_turso_database_url
+TURSO_AUTH_TOKEN=your_turso_auth_token
+```
+
+Never commit your `.env` file or expose API keys publicly.
+
+### 5. Run the application
+
+```bash
 python app.py
 ```
 
-Open **http://127.0.0.1:5000**. The database and sample data are created on first run.
+Open:
 
-**Default administrator:** `admin@smartfarmer.com` / `Admin@123`. A warning banner stays until you change the password.
-Farmers register from the home page.
-
-### API keys and settings
-
-Copy `.env.example` to `.env` next to `app.py` and fill in what you need. Nothing is hard-coded and keys are never sent to the browser.
-
-| Feature | Needs | Without it |
-|---|---|---|
-| Weather, forecast, weather advisory | nothing (Open-Meteo) | works |
-| Market prices | `MARKET_API_KEY` from data.gov.in | page shows previously saved prices with a notice, or says prices are off |
-| AI chatbot | `ANTHROPIC_API_KEY` | chat page explains it is not set up; no fake replies |
-| Voice input / read-aloud | a browser with Web Speech support (Chrome or Edge works best) | text input still works |
-| Disease detection | trained model (see below) | message asking to train the model |
-| Crop advisory, soil-test mode | optional trained `crop_model.pkl` | built-in rule-based fallback (5 crops), labelled as such |
-
-## Training the disease model (once)
-
-Put the PlantVillage class folders (Potato and Tomato, see `dataset/README.txt`) in `dataset/`, then:
-
-```bash
-python model/train_disease_model.py
-python model/train_disease_model.py --epochs 3 --fine-tune 0    # quick test run
+```text
+http://127.0.0.1:5000
 ```
 
-This writes `model/disease_model.keras`, `class_names.json`, `metrics.json`, `training_history.png` and
-`confusion_matrix.png`. The app loads the saved model only; it never retrains at start-up.
-The crop model is optional: `python model/train_crop_model.py` with `dataset/Crop_recommendation.csv`.
+---
 
-## Tests
+## 🌐 Deployment
 
-```bash
-python -m unittest tests.test_app -v      # original features: 29 tests
-python -m unittest tests.test_v2 -v       # new features: 37 tests (external services are faked)
-python tools/check_i18n.py                # every translation key used in the pages exists
-```
+The application is configured for deployment on **Vercel**.
 
-The v2 tests replace the weather, market and AI services with fakes, so they check our code and error handling,
-not the live services. Run the live checks yourself (see "Checking the live services" below).
+### Deployment Configuration
 
-## Checking the live services
+| Setting | Value |
+|---|---|
+| Platform | Vercel |
+| Framework | Flask |
+| Runtime | Python 3.12 |
+| Database | Turso |
+| Repository | GitHub |
 
-1. **Weather:** open *Weather*, search a town, and confirm the forecast and tips appear.
-2. **Market:** add `MARKET_API_KEY`, restart, search a state and crop. If nothing appears for a valid crop, try another district or leave it empty, and check the dataset page on data.gov.in.
-3. **Chatbot:** add `ANTHROPIC_API_KEY`, restart, ask a question in each language.
-4. **Voice:** in Chrome, allow the microphone, press the mic button, check that the text appears before you press Send.
+### Required Environment Variables
 
-## Languages
+Configure these variables in your Vercel project:
 
-English, Kannada and Hindi. The choice is remembered per user and per browser. Text lives in `i18n/*.json`, built
-from `tools/tr_*.py`. Run `python tools/build_translations.py` after editing. Kannada and Hindi were written for this
-project and should be reviewed by a native speaker before wider use.
+- `SECRET_KEY`
+- `ADMIN_EMAIL`
+- `ADMIN_PASSWORD`
+- `GEMINI_API_KEY`
+- `PLANT_HEALTH_API_KEY`
+- `MARKET_API_KEY`
+- `TURSO_DATABASE_URL`
+- `TURSO_AUTH_TOKEN`
 
-## Sensors (ESP32 / Arduino)
+Make sure the variables are configured for the Production environment.
 
-Create a device under *Smart Irrigation → Sensors*, copy the key shown once, and POST JSON:
+---
 
-```
-POST /api/sensor-readings
-X-Device-Key: <key>
-{"soil_moisture": 41.5, "temperature": 29.0, "humidity": 62}
-```
+## 🗄️ Database
 
-The app stores the reading and can use it in the irrigation check. It does not switch pumps or valves. Automatic
-control would need your own hardware, wiring and safety design. See `docs/esp32_soil_sensor.ino` (an example that
-has not been run on hardware).
+The project supports:
 
-## Security
+- **SQLite** for local development.
+- **Turso** for remote database hosting.
 
-Hashed passwords; role checks on every protected route; CSRF tokens on forms and API calls; parameterised SQL;
-template escaping; login throttling; upload validation and re-encoding; security headers; HttpOnly and SameSite
-cookies; two-hour sessions; deactivated users are logged out on their next request; per-user data isolation (tested);
-device keys stored only as hashes; AI and market keys only on the server.
+Turso provides persistent database storage for the deployed application.
 
-## Limitations (say these in the viva)
+Database initialization and schema migrations are handled by the project's database utilities.
 
-- Only Potato and Tomato disease classes (five classes). The model always returns its closest class, so a photo of
-  something that is not a leaf is still labelled; a low-confidence warning helps but does not remove this.
-- The disease model is trained on lab-style images; accuracy on field photos will be lower than the validation figure.
-- The crop advisory and irrigation logic are general rule-based guidelines, not calibrated field models.
-- Calendar dates are estimates from typical crop durations, flagged on every item.
-- Market prices depend on the data.gov.in dataset and API key; coverage varies by market and day.
-- Scheme details were collected from public sources and should be re-checked on the official websites before relying
-  on them. Each scheme shows its verification date.
-- Kannada and Hindi translations need native-speaker review.
-- Voice input depends on the browser and the device; read-aloud needs a voice for the language installed.
-- Login lockout and chat/contact rate limits are kept in memory and reset when the app restarts.
-- Flask's development server is for demonstrations. For real use, run behind Gunicorn or Waitress over HTTPS.
+---
 
-## Licence and disclaimer
+## 📌 Project Status
 
-Educational project. The application gives AI-based guidance only. It does not replace advice from a qualified
-agricultural officer, and it does not recommend specific chemicals or doses.
+| Component | Status |
+|---|---|
+| Flask Application | Implemented |
+| Farmer Authentication | Implemented |
+| Admin Dashboard | Implemented |
+| Crop Recommendation | Implemented |
+| Plant Disease Detection API | Integrated |
+| Weather Integration | Implemented |
+| Market Price API | Integrated |
+| Gemini AI Assistant | Integrated |
+| Turso Database | Integrated |
+| PDF and Excel Export | Implemented |
+| Vercel Deployment | Testing |
+
+---
+
+## ⚠️ Known Limitations
+
+- Crop recommendations are advisory suggestions and should be validated against local agricultural conditions.
+- Plant disease detection depends on the external Plant.id API and image quality.
+- Weather and market information depend on external API availability.
+- AI-generated farming guidance may require verification by agricultural experts.
+- Uploaded files on serverless deployments may require external persistent storage.
+- Sensor functionality requires compatible hardware and configuration.
+
+---
+
+## 🔐 Security
+
+- Password hashing.
+- Role-based access control.
+- CSRF protection.
+- Environment-based secret management.
+- Server-side API key handling.
+- Input validation and upload restrictions.
+- Secure session configuration.
+
+---
+
+## 📄 Disclaimer
+
+Smart Farmer Assistant is an educational agriculture-support project. Its recommendations are intended for informational purposes and should not replace professional agricultural advice.
+
+---
+
+## 👨‍💻 Developer
+
+**Tejas Kumar S**
+
+Repository: [SmartFarmerAssistant](https://github.com/tejass23106/SmartFarmerAssistant)
