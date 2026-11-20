@@ -12,7 +12,7 @@ An AI-powered agriculture assistance platform designed to help farmers make smar
 
 ## 🚀 Live Demo
 
-**Live Application:** https://smart-farmer-assistant-sigma.vercel.app/   
+**Live Application:** https://smart-farmer-assistant.vercel.app/  
 
 ## ✨ Features
 
