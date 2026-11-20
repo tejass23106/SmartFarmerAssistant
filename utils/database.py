@@ -1,5 +1,6 @@
 import os
 import sqlite3
+import turso_serverless
 from werkzeug.security import generate_password_hash
 
 from utils.migrations import LATEST_VERSION, backup_database, current_version, run_migrations
@@ -185,9 +186,17 @@ ADVISORIES = [
 
 
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")
+    url = os.environ.get("TURSO_DATABASE_URL")
+    token = os.environ.get("TURSO_AUTH_TOKEN")
+
+    if url and token:
+        conn = turso_serverless.connect(url, auth_token=token)
+        conn.row_factory = turso_serverless.Row
+    else:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA foreign_keys = ON")
+
     return conn
 
 
@@ -197,8 +206,20 @@ def init_db():
     If the database file already exists and has pending migrations, a backup copy is saved in
     database/backups/ first. Existing tables and records are never dropped.
     """
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    existed = os.path.exists(DB_PATH) and os.path.getsize(DB_PATH) > 0
+    remote = bool(
+        os.environ.get("TURSO_DATABASE_URL")
+        and os.environ.get("TURSO_AUTH_TOKEN")
+    )
+
+    if not remote:
+        os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+
+    existed = (
+        not remote
+        and os.path.exists(DB_PATH)
+        and os.path.getsize(DB_PATH) > 0
+    )
+
     conn = get_db()
     try:
         if existed and current_version(conn) < LATEST_VERSION:

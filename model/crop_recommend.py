@@ -1,9 +1,4 @@
 """Crop recommendation: Random Forest model if trained, otherwise a rule-based fallback."""
-import os
-
-import joblib
-
-MODEL_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "crop_model.pkl")
 FEATURES = ["N", "P", "K", "temperature", "humidity", "ph", "rainfall"]
 
 # (label, min allowed, max allowed)
@@ -26,22 +21,6 @@ RULES = {
     "Wheat":  [(80, 120), (40, 60), (30, 50), (12, 25), (50, 70), (6.0, 7.5), (50, 100)],
     "Maize":  [(60, 100), (35, 60), (20, 60), (21, 30), (55, 75), (5.8, 7.0), (60, 110)],
 }
-
-_model = None
-
-
-def _load_model():
-    global _model
-    if _model is None:
-        if os.path.exists(MODEL_PATH):
-            try:
-                _model = joblib.load(MODEL_PATH)
-            except Exception:
-                _model = False
-        else:
-            _model = False
-    return _model or None
-
 
 def validate_inputs(form):
     """Return (list_of_floats, error_message)."""
@@ -74,17 +53,6 @@ def _rule_score(values, ranges):
 
 def recommend(values):
     """Return dict: crop, confidence (0-100), alternatives [(crop, pct)], method."""
-    model = _load_model()
-    if model is not None:
-        try:
-            proba = model.predict_proba([values])[0]
-            order = proba.argsort()[::-1][:3]
-            ranked = [(str(model.classes_[i]).title(), round(float(proba[i]) * 100, 1)) for i in order]
-            return {"crop": ranked[0][0], "confidence": ranked[0][1],
-                    "alternatives": ranked[1:], "method": "Machine learning (Random Forest)"}
-        except Exception:
-            pass  # fall through to rules if the model misbehaves
-
     ranked = sorted(((c, _rule_score(values, r) * 100) for c, r in RULES.items()),
                     key=lambda x: x[1], reverse=True)
     ranked = [(c, round(s, 1)) for c, s in ranked[:3]]
@@ -93,5 +61,5 @@ def recommend(values):
 
 
 def using_ml():
-    """True when a trained crop_model.pkl was found and loaded (otherwise the rule-based fallback is used)."""
-    return _load_model() is not None
+    """The application uses rule-based crop recommendations."""
+    return False

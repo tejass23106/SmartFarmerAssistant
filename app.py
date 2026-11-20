@@ -20,19 +20,6 @@ from security import (register as register_security, load_secret_key, load_doten
 from model.crop_recommend import recommend, validate_inputs, LIMITS, FEATURES, using_ml
 from model.advisory_engine import (SOILS, SEASONS, WATER_LEVELS, SEASON_HINTS, advise,
                                    validate as validate_advisory, related_crop_info)
-from model.disease_predict import (predict_image, model_available, parse_label, supported_classes,
-                                   ModelNotAvailable, PredictionError, LOW_CONFIDENCE)
-from model.potato_tuber_predict import (
-    predict_potato_tuber,
-    model_available as tuber_model_available,
-    TuberModelNotAvailable,
-    TuberPredictionError,
-)
-from model.image_router_predict import (
-    predict_image_type,
-    ImageRouterError,
-    RouterModelNotAvailable,
-)
 from model.plant_health_api import (
     analyze_plant_image,
     PlantHealthAPIError,
@@ -591,9 +578,7 @@ def disease_detection():
     return render_template(
         "disease_detection.html",
         recent=recent,
-        model_ready=model_available(),
-        tuber_model_ready=tuber_model_available(),
-        supported=supported_classes()
+        api_configured=bool(os.getenv("PLANT_HEALTH_API_KEY"))
     )
 
 
@@ -609,7 +594,6 @@ def disease_result(prediction_id):
     )
 
     conn = get_db()
-
     p = conn.execute(
         "SELECT * FROM predictions WHERE id=? AND user_id=?",
         (prediction_id, session["user_id"])
@@ -620,77 +604,25 @@ def disease_result(prediction_id):
         abort(404)
 
     info = None if api_used else find_disease_info(
-        conn,
-        p["crop_name"],
-        p["disease_name"]
+        conn, p["crop_name"], p["disease_name"]
     )
-
     conn.close()
 
-    classification = (
-        last.get("classification", [])
-        if api_used else []
-    )
+    classification = last.get("classification", []) if api_used else []
+    diseases = last.get("diseases", []) if api_used else []
+    healthy_probability = last.get("healthy_probability") if api_used else None
 
-    diseases = (
-        last.get("diseases", [])
-        if api_used else []
-    )
-
-    healthy_probability = (
-        last.get("healthy_probability")
-        if api_used else None
-    )
-
-    is_tuber = False
-    supported = []
-    top = []
-
-    if not api_used:
-        is_tuber = bool(
-            last
-            and last.get("id") == prediction_id
-            and last.get("plant_part") == "tuber"
-        )
-
-        top = (
-            last.get("top", [])
-            if last and last.get("id") == prediction_id
-            else []
-        )
-
-        if is_tuber:
-            with open(
-                os.path.join(
-                    os.path.dirname(os.path.abspath(__file__)),
-                    "model",
-                    "potato_tuber_class_names.json"
-                ),
-                encoding="utf-8"
-            ) as f:
-                tuber_classes = json.load(f)
-
-            supported = [
-                "Potato Healthy" if name == "Healthy Potatoes"
-                else "Potato Other / Unclassified"
-                if name == "Miscellaneous"
-                else f"Potato {name}"
-                for name in tuber_classes
-            ]
-        else:
-            supported = supported_classes()
-
-    confidence = p["confidence"] or 0
+    confidence = float(p["confidence"] or 0)
 
     return render_template(
         "disease_result.html",
         p=p,
         info=info,
-        top=top,
-        supported=supported,
-        is_tuber=is_tuber,
-        low=confidence < LOW_CONFIDENCE,
-        threshold=LOW_CONFIDENCE,
+        top=[],
+        supported=[],
+        is_tuber=False,
+        low=confidence < 60,
+        threshold=60,
         healthy=(p["disease_name"] or "").lower() == "healthy",
         api_used=api_used,
         classification=classification,

@@ -7,8 +7,11 @@
     <p class="sub">{{ t('dis.sub') }}</p>
   </div>
 </div>
-{% if not model_ready %}<div class="alert alert-warning"><i class="bi bi-exclamation-triangle"></i> {{ t('dis.no_model')
-  }} <code>python model/train_disease_model.py</code></div>{% endif %}
+{% if not api_configured %}
+<div class="alert alert-danger">
+  Plant health API key is not configured. Set PLANT_HEALTH_API_KEY in your environment.
+</div>
+{% endif %}
 <div class="row g-3">
   <div class="col-lg-6">
     <div class="card stat-card">
@@ -56,9 +59,9 @@
           <li>{{ t('dis.tip2') }}</li>
           <li>{{ t('dis.tip3') }}</li>
         </ul>
-        <div class="small"><strong>{{ t('dis.supported') }}:</strong> {% if supported %}{{ supported|join(', ') }}{%
-          else %}<span class="text-muted">{{ t('dis.not_trained') }}</span>{% endif %}</div>
-        <div class="small text-muted mt-1">{{ t('dis.supported_note') }}</div>
+        <div class="small text-muted">
+          Plant identification and disease suggestions are provided by the Plant.id API.
+        </div>
       </div>
     </div>
     <div class="card stat-card">
