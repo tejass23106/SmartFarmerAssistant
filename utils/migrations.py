@@ -305,18 +305,36 @@ def backup_database(conn, db_path):
 
 
 def run_migrations(conn):
-    """Apply pending migrations; returns the list of versions applied."""
-    applied, current = [], current_version(conn)
+    """Apply pending migrations using a portable version table."""
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS schema_migrations (
+            version INTEGER PRIMARY KEY
+        )
+    """)
+
+    row = conn.execute(
+        "SELECT MAX(version) FROM schema_migrations"
+    ).fetchone()
+
+    current = row[0] or 0
+    applied = []
+
     for version, fn in MIGRATIONS:
         if version <= current:
             continue
+
         try:
             conn.execute("BEGIN")
             fn(conn)
-            conn.execute(f"PRAGMA user_version = {int(version)}")
+            conn.execute(
+                "INSERT INTO schema_migrations (version) VALUES (?)",
+                (version,)
+            )
             conn.commit()
         except Exception:
             conn.rollback()
             raise
+
         applied.append(version)
+
     return applied
